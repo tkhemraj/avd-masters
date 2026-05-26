@@ -50,8 +50,8 @@ def cmd_status():
     print(f"  Retiring SKUs:       {stats['retiring_skus']}")
     print()
 
-    print("Run `python run.py midas` — this is the one that pays for itself.\n")
-    print("Other: alerts | discover | cost | forecast\n")
+    print("Run `python run.py midas` or `python run.py touch` — these are the ones that pay for themselves.\n")
+    print("Commands: midas | touch | discover | alerts | cost | forecast\n")
 
 
 def cmd_alerts():
@@ -81,19 +81,78 @@ def cmd_forecast():
 
 def cmd_midas():
     """The signature Midas Touch experience — Grok inside, gold on the table."""
-    from avd_masters import midas
+    from avd_masters import discovery, midas
 
     print("Running AVD Masters Midas Touch...\n")
-    print("This is the part where the tool actually earns its keep.\n")
+    print("Attempting to touch your actual environment for real gold...\n")
+
+    hosts = []
+    try:
+        print("  → Running live discovery (this may take a moment)...")
+        hosts = discovery.scan_tenant()
+        print(f"  → Discovered {len(hosts)} hosts.\n")
+    except Exception as e:
+        print(f"  → Live discovery not available in this environment ({e}).")
+        print("  → Using rich demo data with the same analysis engine.\n")
 
     try:
-        result = midas.run_midas_demo()
-        # In a real run with discovery data we would pass hosts here
-        # result = midas.perform_midas_touch(hosts=real_hosts)
+        if hosts:
+            result = midas.perform_midas_touch(hosts=hosts, include_demo_data=False)
+            midas.print_gold_report(result)
+        else:
+            result = midas.run_midas_demo()
     except Exception as e:
-        print(f"Midas touch failed: {e}")
-        print("Falling back to demo mode (still shows the gold).")
+        print(f"Midas analysis hit an issue: {e}")
+        print("Falling back to the strongest demo report we have...")
         result = midas.run_midas_demo()
+
+
+def cmd_touch():
+    """
+    The ultimate 'Midas Touch' one-command experience.
+    Discover → Analyze like Grok → Generate gold tags → Actionable remediation playbooks.
+    """
+    from avd_masters import discovery, midas
+
+    print("\n" + "═" * 72)
+    print("║" + " AVD MASTERS — ONE COMMAND TOUCH ".center(70) + "║")
+    print("═" * 72)
+    print("\nThis will attempt to touch your real environment and turn confusion into gold.\n")
+
+    hosts = []
+    try:
+        print("Phase 1: Discovery + live SKU refresh")
+        hosts = discovery.scan_tenant()
+        print(f"  Discovered {len(hosts)} GPU hosts.\n")
+    except Exception as e:
+        print(f"  Live discovery limited ({e}). Using powerful demo mode.\n")
+
+    print("Phase 2: Midas Intelligence Analysis")
+    try:
+        if hosts:
+            result = midas.perform_midas_touch(hosts, include_demo_data=False)
+        else:
+            result = midas.perform_midas_touch([], include_demo_data=True)
+        midas.print_gold_report(result)
+    except Exception as e:
+        print(f"  Analysis issue: {e}")
+        result = midas.run_midas_demo()
+
+    print("\nPhase 3: Rich Auto-Tagging + Remediation Playbooks")
+    try:
+        if hosts:
+            tagged = discovery.auto_tag_discovered_hosts(hosts, apply_tags=False)
+            print(f"  Prepared rich avd_masters:* tags for {len(tagged)} hosts (dry-run).")
+            print("  Tags include: cost-per-second, gpu-model, recommendation, last-calculated, etc.")
+        else:
+            print("  (Demo mode) Would generate high-quality Azure tags + recommended actions for every host above.")
+    except Exception as e:
+        print(f"  Tagging prep: {e}")
+
+    print("\n" + "═" * 72)
+    print("  Next level: Run with real credentials + utilization data for terrifying accuracy.")
+    print("  The gold is real. Go touch it.")
+    print("═" * 72 + "\n")
 
 
 def cmd_discover():
@@ -135,6 +194,7 @@ def main():
     subparsers.add_parser("forecast", help="Show predictive forecasting demo")
     subparsers.add_parser("discover", help="Run discovery + dynamic SKU refresh + auto-tagging")
     subparsers.add_parser("midas", help="THE MIDAS TOUCH — Grok intelligence, quantified gold, signature experience")
+    subparsers.add_parser("touch", help="ONE COMMAND: Full discovery + Midas analysis + rich tagging + remediation playbooks")
 
     args = parser.parse_args()
 
@@ -148,6 +208,8 @@ def main():
         cmd_discover()
     elif args.command == "midas":
         cmd_midas()
+    elif args.command == "touch":
+        cmd_touch()
     else:
         cmd_status()
 

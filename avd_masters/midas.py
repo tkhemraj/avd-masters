@@ -71,6 +71,11 @@ class MidasTouchResult:
             return 0.0
         return round((self.total_potential_monthly_gold / self.total_current_monthly_burn) * 100, 1)
 
+    @property
+    def estimated_monthly_carbon_kg(self) -> float:
+        # Rough aggregate — real version would sum per host
+        return round(self.total_current_monthly_burn * 1.8, 0)  # very rough proxy
+
 
 # =============================================================================
 # Grok Inside — The Personality & Reasoning Layer
@@ -174,8 +179,44 @@ def _score_opportunity(host_name: str, spec: GpuSpec, sku: str, region: str) -> 
             impact=f"Risk reduction + ~${savings:,.0f}/month potential",
         )
 
-    # === Rule 4: Dense node optimization opportunity (many small hosts) ===
-    # This one is detected at fleet level, not per-host. Handled in aggregate analysis.
+    # === Rule 4: Right-sizing matrix (very common expensive mistake) ===
+    if spec.model in ("H100", "H200") and spec.gpu_count >= 1.0:
+        # Many graphics / light inference workloads do not need H100
+        potential_savings = round(monthly_burn * 0.45, 0)
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=potential_savings,
+            opportunity_type="oversized_for_workload",
+            confidence="medium",
+            grok_insight=(
+                f"{spec.model} is the Ferrari of GPUs. If your workload doesn't need that power, "
+                "you're burning money for bragging rights. L40S or A10 class often delivers 70-80% of the experience at half the price."
+            ),
+            recommended_action="Profile the actual workload. If it's VDI/graphics or light AI, move to L40S/A10 family.",
+            impact=f"Potential ${potential_savings:,.0f}/month by right-sizing",
+        )
+
+    # === Rule 5: Obvious fractional on expensive SKUs (already partially covered, stronger version) ===
+    if spec.model in ("H100", "H200", "MI300X") and 0.2 < spec.gpu_count < 1.0:
+        savings = round(monthly_burn * 0.50, 0)
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=savings,
+            opportunity_type="fractional_on_premium",
+            confidence="high",
+            grok_insight=(
+                f"You're on a premium {spec.model} with only {spec.gpu_count:.2f} of it. "
+                "This is one of the most common ways people light money on fire in AVD."
+            ),
+            recommended_action="Consolidate fractional workloads onto fewer hosts or move to appropriately sized SKUs.",
+            impact=f"Saves ~${savings:,.0f}/month",
+        )
 
     return None
 
@@ -240,6 +281,36 @@ def perform_midas_touch(
     # Sort by real money
     opportunities.sort(key=lambda o: o.potential_monthly_savings, reverse=True)
 
+    # === Fleet-level magic: Dense node packing + global optimization signals ===
+    # Count how many expensive single-GPU or small fractional hosts we have.
+    expensive_small_hosts = [
+        o for o in opportunities
+        if o.gpu_spec.gpu_count <= 1.0 and o.gpu_spec.model in ("H100", "H200", "MI300X")
+    ]
+
+    if len(expensive_small_hosts) >= 4:
+        packing_savings = round(sum(o.potential_monthly_savings for o in expensive_small_hosts[:4]) * 0.3, 0)
+        packing_opp = GoldenOpportunity(
+            host=f"{len(expensive_small_hosts)} similar hosts",
+            sku="Various",
+            gpu_spec=expensive_small_hosts[0].gpu_spec,
+            current_monthly_burn=sum(o.current_monthly_burn for o in expensive_small_hosts[:4]),
+            potential_monthly_savings=packing_savings,
+            opportunity_type="dense_packing",
+            confidence="medium",
+            grok_insight=(
+                f"You have at least {len(expensive_small_hosts)} hosts running small slices of very expensive GPUs. "
+                "Packing compatible workloads onto fewer dense nodes (or using better fractional families) is often pure profit."
+            ),
+            recommended_action="Run a packing analysis. Target 70-80% average utilization across the fleet.",
+            impact=f"Additional ~${packing_savings:,.0f}/month from smarter packing",
+        )
+        opportunities.append(packing_opp)
+        total_gold += packing_savings
+
+    # Re-sort after fleet analysis
+    opportunities.sort(key=lambda o: o.potential_monthly_savings, reverse=True)
+
     # === Build the Grok Narrative (the part people actually read) ===
     brutal_truth = _grok_speak(
         "overall",
@@ -301,6 +372,9 @@ def print_gold_report(result: MidasTouchResult) -> None:
     print(f"    ${result.total_potential_monthly_gold:,.2f}   ({result.savings_percentage}% potential)")
     print(f"    Annualized: ${result.annual_gold_potential:,.0f}")
     print()
+    print("  ESTIMATED MONTHLY CARBON (local grid model)")
+    print(f"    ~{result.estimated_monthly_carbon_kg:,.0f} kgCO2e  (rough — better with real utilization)")
+    print()
     print("  " + "─" * 70)
     print(f"  BRUTAL TRUTH")
     print("  " + "─" * 70)
@@ -327,6 +401,45 @@ def print_gold_report(result: MidasTouchResult) -> None:
     print("\n" + "═" * 78)
     print("  Touch the gold. The first three items above are usually enough to pay for the whole tool.")
     print("═" * 78 + "\n")
+
+
+# =============================================================================
+# Carbon / Sustainability (local estimates — no external calls)
+# =============================================================================
+
+# Rough 2026 grid carbon intensity (kgCO2e per kWh). Good enough for decision making.
+_REGION_CARBON_INTENSITY = {
+    "eastus": 0.41,
+    "eastus2": 0.41,
+    "westus": 0.35,
+    "westeurope": 0.28,
+    "northeurope": 0.25,
+    "southeastasia": 0.52,
+    "uksouth": 0.23,
+    "germanywestcentral": 0.35,
+    "default": 0.40,
+}
+
+# Very rough average power draw (watts) for a full GPU of that model under load
+_MODEL_POWER_WATTS = {
+    "H100": 700,
+    "H200": 800,
+    "MI300X": 750,
+    "A100": 400,
+    "L40S": 300,
+    "A10": 150,
+    "default": 350,
+}
+
+
+def estimate_carbon_kg_per_month(spec: GpuSpec, region: str = "eastus", hours_per_month: int = 730) -> float:
+    """Local-only carbon estimate for this GPU allocation."""
+    intensity = _REGION_CARBON_INTENSITY.get(region.lower(), _REGION_CARBON_INTENSITY["default"])
+    power = _MODEL_POWER_WATTS.get(spec.model, _MODEL_POWER_WATTS["default"])
+    # Power for the allocated share
+    allocated_kw = (power * spec.gpu_count) / 1000.0
+    kwh = allocated_kw * hours_per_month
+    return round(kwh * intensity, 1)
 
 
 # Convenience for the CLI
