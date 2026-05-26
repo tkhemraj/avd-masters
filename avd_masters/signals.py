@@ -16,7 +16,9 @@ Design goals:
 - Clean, extensible datamodel that Midas, Governance, Alerting, and the Toolkit can all consume
 - Graceful degradation with partial or simulated data
 
-We don't just want to know if GPUs are busy. We want to know if the *experience* is good, and if the money is being well spent.
+We don't just want to know if GPUs are busy. We want to know if the *experience* is good (including profile/FSLogix experience), and if the money is being well spent.
+
+The model now uses composition (ProfileSignal inside HostSignal) for cleaner separation as profile pain became a first-class concern.
 """
 
 from __future__ import annotations
@@ -27,6 +29,35 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ProfileSignal:
+    """
+    Dedicated signal container for everything profile/FSLogix related.
+
+    This exists because profile pain is so disproportionately bad in AVD that it
+    deserves its own clean model instead of being buried in a giant flat HostSignal.
+    """
+    load_time_ms: float | None = None
+    logon_duration_ms: float | None = None
+    container_mount_latency_ms: float | None = None
+    disk_latency_ms: float | None = None
+    container_size_gb: float | None = None
+    growth_rate_mb_per_day: float | None = None
+    last_error_code: Optional[str] = None
+    load_success_rate: float | None = None
+    has_corruption_signals: bool = False
+
+    @property
+    def is_painful(self) -> bool:
+        if self.load_time_ms and self.load_time_ms > 15000:
+            return True
+        if self.logon_duration_ms and self.logon_duration_ms > 45000:
+            return True
+        if self.has_corruption_signals:
+            return True
+        return False
 
 
 @dataclass
@@ -111,17 +142,29 @@ class HostSignal:
     network_latency_ms: float | None = None         # Protocol / RTT latency (huge for remote graphics)
     encoding_latency_ms: float | None = None        # GPU encoding time if using video encoding
 
-    # === Profile / FSLogix Experience Signals (critical for real AVD pain) ===
-    # These are some of the highest-signal things you can collect for AVD.
-    # Bad profile performance often dwarfs raw GPU utilization as a user complaint source.
-    profile_load_time_ms: float | None = None       # Time to load the FSLogix container / profile
-    logon_duration_ms: float | None = None          # Full logon time (from credential submission to desktop ready)
-    profile_container_mount_latency_ms: float | None = None  # Time to attach the VHD/VHDX
-    profile_disk_latency_ms: float | None = None    # If you can measure I/O latency on the profile disk
+    # === Profile / FSLogix Experience Signals ===
+    # Using composition for cleanliness — profile pain is a first-class citizen in AVD.
+    profile: ProfileSignal = field(default_factory=ProfileSignal)
 
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     source: str = "unknown"      # "nvidia-smi", "winrm", "simulated", "azure-metrics", etc.
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Clean serialization for APIs, storage, or reporting."""
+        return {
+            "host_name": self.host_name,
+            "gpu_util_avg": self.gpu_util_avg,
+            "gpu_util_peak": self.gpu_util_peak,
+            "memory_util_avg": self.memory_util_avg,
+            "profile": {
+                "load_time_ms": self.profile.load_time_ms,
+                "logon_duration_ms": self.profile.logon_duration_ms,
+                "has_corruption_signals": self.profile.has_corruption_signals,
+            },
+            "timestamp": self.timestamp,
+            "source": self.source,
+        }
 
     @property
     def is_likely_idle(self) -> bool:
@@ -148,11 +191,16 @@ class HostSignal:
         Heuristic specifically for bad profile/FSLogix performance.
         This is often the real hidden killer in AVD.
         """
-        if self.profile_load_time_ms and self.profile_load_time_ms > 15000:  # 15 seconds is painful
+        p = self.profile
+        if p.load_time_ms and p.load_time_ms > 15000:
             return True
-        if self.logon_duration_ms and self.logon_duration_ms > 45000:  # 45s+ logons are bad
+        if p.logon_duration_ms and p.logon_duration_ms > 45000:
             return True
-        if self.profile_container_mount_latency_ms and self.profile_container_mount_latency_ms > 8000:
+        if p.container_mount_latency_ms and p.container_mount_latency_ms > 8000:
+            return True
+        if p.has_corruption_signals:
+            return True
+        if p.last_error_code:
             return True
         return False
 
@@ -212,6 +260,37 @@ class FleetSignals:
             return 100.0
         bad_ratio = self.poor_profile_experience_count / len(self.signals)
         return round((1 - bad_ratio) * 100, 1)
+
+    def get_profile_debt_score(self) -> float:
+        """
+        0-100 score representing how much "profile technical debt" exists in the fleet.
+        Higher = more painful profile setups that are actively hurting users and costing money.
+        """
+        if not self.signals:
+            return 0.0
+
+        debt = 0.0
+        for sig in self.signals:
+            if sig.has_poor_profile_experience:
+                debt += 40
+            if sig.profile.has_corruption_signals:
+                debt += 35
+            if sig.profile.load_time_ms and sig.profile.load_time_ms > 30000:
+                debt += 20
+            if sig.profile.last_error_code:
+                debt += 25
+
+        # Normalize
+        max_possible = len(self.signals) * 120
+        return round(min(100, (debt / max_possible) * 100), 1)
+
+    def to_dict(self) -> dict:
+        """Serialize the entire fleet for storage or APIs."""
+        return {
+            "generated_at": self.generated_at,
+            "window_hours": self.window_hours,
+            "signals": [s.to_dict() for s in self.signals],
+        }
 
 
 # =============================================================================
@@ -381,13 +460,21 @@ def enrich_midas_opportunities(hosts: list[Any], fleet_signals: FleetSignals | N
                 "grok_line": f"{name} has been at {sig.gpu_util_avg:.1f}% for the window. This is not 'bursty'. This is expensive sleep.",
             })
         if sig and sig.has_poor_profile_experience:
+            reasons = []
+            p = sig.profile
+            if p.load_time_ms and p.load_time_ms > 15000:
+                reasons.append(f"slow profile load ({int(p.load_time_ms/1000)}s)")
+            if p.logon_duration_ms and p.logon_duration_ms > 45000:
+                reasons.append(f"painful logon ({int(p.logon_duration_ms/1000)}s)")
+            if p.has_corruption_signals:
+                reasons.append("signs of profile corruption")
+
             enriched.append({
                 "host": name,
                 "type": "poor_profile_performance",
                 "grok_line": (
-                    f"{name} has terrible profile/FSLogix performance "
-                    f"(load time ~{sig.profile_load_time_ms}ms, logon ~{sig.logon_duration_ms}ms). "
-                    "This is one of the most common reasons users say AVD feels broken."
+                    f"{name} has terrible profile/FSLogix performance ({', '.join(reasons)}). "
+                    "This is one of the most common (and expensive) reasons users say AVD feels broken."
                 ),
             })
     return enriched
@@ -432,3 +519,62 @@ def get_combined_fleet_health(fleet: FleetSignals) -> dict[str, float]:
         "poor_profile_experience_hosts": fleet.poor_profile_experience_count,
         "idle_hosts": fleet.idle_count,
     }
+
+
+def get_top_pain_points(fleet: FleetSignals, limit: int = 5) -> list[dict]:
+    """
+    Returns the hosts with the worst combined pain (cost waste + bad experience + profile issues).
+    Extremely useful for prioritization.
+    """
+    scored = []
+    for sig in fleet.signals:
+        pain = 0.0
+        if sig.is_likely_idle or sig.is_underutilized:
+            pain += 30
+        if sig.has_poor_experience:
+            pain += 40
+        if sig.has_poor_profile_experience:
+            pain += 50
+        if sig.profile.has_corruption_signals:
+            pain += 35
+
+        if pain > 0:
+            scored.append({
+                "host": sig.host_name,
+                "pain_score": round(pain, 1),
+                "reasons": {
+                    "idle_or_underutilized": sig.is_likely_idle or sig.is_underutilized,
+                    "poor_experience": sig.has_poor_experience,
+                    "poor_profile_experience": sig.has_poor_profile_experience,
+                    "profile_corruption": sig.profile.has_corruption_signals,
+                }
+            })
+
+    return sorted(scored, key=lambda x: x["pain_score"], reverse=True)[:limit]
+
+    def generate_profile_debt_opportunities(self) -> list[dict]:
+        """
+        Directly produces Midas-ready opportunity dicts focused on profile pain.
+        This is rocket fuel for the intelligence engine.
+        """
+        opps = []
+        for sig in self.signals:
+            if not sig.has_poor_profile_experience:
+                continue
+
+            p = sig.profile
+            pain_reasons = []
+            if p.load_time_ms and p.load_time_ms > 15000:
+                pain_reasons.append(f"slow container load ({int(p.load_time_ms/1000)}s)")
+            if p.logon_duration_ms and p.logon_duration_ms > 45000:
+                pain_reasons.append(f"terrible logon time ({int(p.logon_duration_ms/1000)}s)")
+            if p.has_corruption_signals:
+                pain_reasons.append("corruption signals detected")
+
+            opps.append({
+                "host": sig.host_name,
+                "type": "profile_debt",
+                "grok_line": f"{sig.host_name} is suffering from bad FSLogix/profile performance ({', '.join(pain_reasons)}). This is expensive and makes users hate life.",
+                "impact": "Direct user experience destruction on expensive hardware.",
+            })
+        return opps
