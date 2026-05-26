@@ -416,3 +416,19 @@ def get_local_collector_fleet(host_names: list[str]) -> FleetSignals:
     collector = LocalCollector()
     sigs = collector.collect(host_names)
     return FleetSignals(signals=sigs, window_hours=6)  # more realistic recent window
+
+
+def get_combined_fleet_health(fleet: FleetSignals) -> dict[str, float]:
+    """
+    Returns a compact health dashboard for the fleet.
+
+    Useful for quick operator views or feeding into Midas/Governance.
+    """
+    return {
+        "waste_score": fleet.get_waste_score(),
+        "overall_experience_score": fleet.get_experience_score(),
+        "profile_experience_score": fleet.get_profile_experience_score(),
+        "poor_experience_hosts": fleet.poor_experience_count,
+        "poor_profile_experience_hosts": fleet.poor_profile_experience_count,
+        "idle_hosts": fleet.idle_count,
+    }
