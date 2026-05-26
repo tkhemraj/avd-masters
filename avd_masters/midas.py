@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from avd_masters import alerting, catalog, cost, profiles, signals
+from avd_masters import alerting, catalog, cost, profiles, signals, toolkit
 from avd_masters.catalog import GpuSpec
 from avd_masters.signals import FleetSignals, HostSignal
 
@@ -319,6 +319,10 @@ def _score_opportunity(host_name: str, spec: GpuSpec, sku: str, region: str) -> 
             recommended_action="Profile whether moving this workload to H100/H200 would let you consolidate users and reduce total nodes.",
             impact=f"Possible density win + ~${savings:,.0f}/month efficiency",
         )
+
+    # === Toolkit-driven: Profile configuration debt ===
+    # (populated externally via toolkit.analyze_profile_debt)
+    # We leave a hook here so Midas can accept these cleanly.
 
     return None
 
