@@ -305,6 +305,34 @@ def quick_avd_health_check(
     }
 
 
+# =============================================================================
+# 5. Simple but powerful summary for leadership / MSPs
+# =============================================================================
+
+def generate_executive_summary(
+    total_monthly_burn: float,
+    recoverable_gold: float,
+    poor_experience_pct: float,
+    profile_health_avg: int,
+) -> str:
+    """
+    Produces a short, clear, non-technical summary suitable for forwarding to management.
+    """
+    lines = [
+        f"AVD GPU Environment Summary",
+        f"Current monthly spend: ${total_monthly_burn:,.0f}",
+        f"Identified recoverable value: ${recoverable_gold:,.0f}/month",
+        f"Users experiencing poor performance: ~{poor_experience_pct:.0f}%",
+        f"Average profile configuration health: {profile_health_avg}/100",
+    ]
+    if recoverable_gold > total_monthly_burn * 0.25:
+        lines.append("Recommendation: Significant optimization opportunity exists.")
+    if profile_health_avg < 60:
+        lines.append("Warning: Profile configuration is a major source of user complaints and risk.")
+
+    return "\n".join(lines)
+
+
 __all__ = [
     "ProfileStorageAnalysis",
     "analyze_profile_storage",
