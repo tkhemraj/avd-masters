@@ -1,15 +1,22 @@
 """
-AVD Masters — Signals & Utilization Layer
+AVD Masters — Signals Layer
 
-This is the foundation for "terrifyingly accurate" idle and waste detection.
+This is the central telemetry and observation layer for AVD Masters.
+
+It is deliberately designed to be the single place where we bring together:
+- GPU utilization & cost signals
+- User experience / latency signals (frame times, input lag, etc.)
+- Profile & FSLogix performance signals (one of the highest-impact areas in real AVD)
+
+The goal is "terrifyingly accurate" visibility — not just utilization, but whether users are actually having a good (or terrible) experience, and whether the expensive hardware is being used effectively.
 
 Design goals:
-- Local only by default (no forced expensive ingestion)
-- Pluggable collectors (nvidia-smi, rocm-smi, WinRM, SSH, Azure Metrics as optional)
-- Clean datamodel that Midas, Optimizer, and Governance can all consume
-- Graceful degradation: works great with partial or simulated data
+- Local first (direct collection via nvidia-smi/rocm-smi + WinRM/SSH)
+- Pluggable collectors
+- Clean, extensible datamodel that Midas, Governance, Alerting, and the Toolkit can all consume
+- Graceful degradation with partial or simulated data
 
-Grok inside: We tell the truth about utilization. No sampling lies, no "it looks fine" when it's burning money.
+We don't just want to know if GPUs are busy. We want to know if the *experience* is good, and if the money is being well spent.
 """
 
 from __future__ import annotations
@@ -104,6 +111,14 @@ class HostSignal:
     network_latency_ms: float | None = None         # Protocol / RTT latency (huge for remote graphics)
     encoding_latency_ms: float | None = None        # GPU encoding time if using video encoding
 
+    # === Profile / FSLogix Experience Signals (critical for real AVD pain) ===
+    # These are some of the highest-signal things you can collect for AVD.
+    # Bad profile performance often dwarfs raw GPU utilization as a user complaint source.
+    profile_load_time_ms: float | None = None       # Time to load the FSLogix container / profile
+    logon_duration_ms: float | None = None          # Full logon time (from credential submission to desktop ready)
+    profile_container_mount_latency_ms: float | None = None  # Time to attach the VHD/VHDX
+    profile_disk_latency_ms: float | None = None    # If you can measure I/O latency on the profile disk
+
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     source: str = "unknown"      # "nvidia-smi", "winrm", "simulated", "azure-metrics", etc.
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -124,6 +139,20 @@ class HostSignal:
         if self.p95_frame_time_ms and self.p95_frame_time_ms > 33:  # ~30fps feels bad
             return True
         if self.input_latency_ms and self.input_latency_ms > 80:
+            return True
+        return False
+
+    @property
+    def has_poor_profile_experience(self) -> bool:
+        """
+        Heuristic specifically for bad profile/FSLogix performance.
+        This is often the real hidden killer in AVD.
+        """
+        if self.profile_load_time_ms and self.profile_load_time_ms > 15000:  # 15 seconds is painful
+            return True
+        if self.logon_duration_ms and self.logon_duration_ms > 45000:  # 45s+ logons are bad
+            return True
+        if self.profile_container_mount_latency_ms and self.profile_container_mount_latency_ms > 8000:
             return True
         return False
 
@@ -153,6 +182,10 @@ class FleetSignals:
     def poor_experience_count(self) -> int:
         return sum(1 for s in self.signals if s.has_poor_experience)
 
+    @property
+    def poor_profile_experience_count(self) -> int:
+        return sum(1 for s in self.signals if s.has_poor_profile_experience)
+
     def get_waste_score(self) -> float:
         """0-100 score where higher = more obvious waste happening right now."""
         if not self.signals:
@@ -160,13 +193,24 @@ class FleetSignals:
         idle_ratio = self.idle_count / len(self.signals)
         under_ratio = self.underutilized_count / len(self.signals)
         experience_penalty = (self.poor_experience_count / len(self.signals)) * 30
-        return round((idle_ratio * 50 + under_ratio * 30 + experience_penalty), 1)
+        profile_penalty = (self.poor_profile_experience_count / len(self.signals)) * 25
+        return round((idle_ratio * 45 + under_ratio * 25 + experience_penalty + profile_penalty), 1)
 
     def get_experience_score(self) -> float:
         """0-100 user experience health score for the fleet (higher is better)."""
         if not self.signals:
             return 100.0
         bad_ratio = self.poor_experience_count / len(self.signals)
+        return round((1 - bad_ratio) * 100, 1)
+
+    def get_profile_experience_score(self) -> float:
+        """
+        Dedicated score for profile/FSLogix experience health.
+        This is often the real differentiator in whether users say AVD "sucks".
+        """
+        if not self.signals:
+            return 100.0
+        bad_ratio = self.poor_profile_experience_count / len(self.signals)
         return round((1 - bad_ratio) * 100, 1)
 
 
@@ -211,12 +255,15 @@ class LocalCollector(SignalCollector):
     Realistic pattern for direct hardware collection.
 
     In production this would:
-    - Use WinRM / SSH to run nvidia-smi or rocm-smi
-    - Parse the output cleanly (no sampling lies)
+    - Use WinRM / SSH to run nvidia-smi or rocm-smi for GPU metrics
+    - Collect custom latency/experience probes
+    - Collect profile/FSLogix performance data (logon times, container mount latency, etc.)
+    - Parse everything cleanly with no sampling lies
     - Handle fractional GPUs correctly
     - Fall back gracefully on unreachable hosts
 
     This stub shows the exact shape we want real collectors to follow.
+    Real implementations should be able to populate all fields on HostSignal, including the profile experience fields.
     """
     name = "local-direct"
 
@@ -301,6 +348,14 @@ def analyze_for_midas(fleet: FleetSignals) -> dict[str, Any]:
             f"(experience score: {experience_score}). Expensive hardware that feels bad is the most painful kind of waste."
         )
 
+    profile_bad = fleet.poor_profile_experience_count
+    profile_score = fleet.get_profile_experience_score()
+    if profile_bad > 0:
+        insights["summary"] += (
+            f" Profile/FSLogix experience is also suffering on {profile_bad} hosts "
+            f"(profile experience score: {profile_score}). This is frequently the real hidden root cause of 'AVD sucks' complaints."
+        )
+
     return insights
 
 
@@ -325,12 +380,22 @@ def enrich_midas_opportunities(hosts: list[Any], fleet_signals: FleetSignals | N
                 "util": sig.gpu_util_avg,
                 "grok_line": f"{name} has been at {sig.gpu_util_avg:.1f}% for the window. This is not 'bursty'. This is expensive sleep.",
             })
+        if sig and sig.has_poor_profile_experience:
+            enriched.append({
+                "host": name,
+                "type": "poor_profile_performance",
+                "grok_line": (
+                    f"{name} has terrible profile/FSLogix performance "
+                    f"(load time ~{sig.profile_load_time_ms}ms, logon ~{sig.logon_duration_ms}ms). "
+                    "This is one of the most common reasons users say AVD feels broken."
+                ),
+            })
     return enriched
 
 
 # Convenience factories (polished)
 def get_simulated_fleet(host_names: list[str]) -> FleetSignals:
-    """Quick demo fleet with realistic painful patterns."""
+    """Quick demo fleet with realistic painful patterns (util + latency + profile experience)."""
     collector = SimulatedCollector()
     sigs = collector.collect(host_names)
     return FleetSignals(signals=sigs)
@@ -339,7 +404,14 @@ def get_simulated_fleet(host_names: list[str]) -> FleetSignals:
 def get_local_collector_fleet(host_names: list[str]) -> FleetSignals:
     """
     Use this when you want to simulate what a real direct hardware collector would return.
-    Swap the implementation inside LocalCollector when you have WinRM/SSH + smi working.
+
+    In production you would replace the body of LocalCollector.collect() with actual
+    WinRM/SSH execution that gathers:
+    - nvidia-smi / rocm-smi data
+    - Custom latency probes
+    - Profile/FSLogix performance metrics (very high value)
+
+    This is the recommended entry point for most real usage today.
     """
     collector = LocalCollector()
     sigs = collector.collect(host_names)
