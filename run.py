@@ -1,23 +1,28 @@
 """
-GROKY 2.0 — The Entry Point
+GROKY 2.0 — Main Entry Point
 
-This is what you get when you actually care about the hardware.
+This is the real command line interface for managing your AVD GPU environment.
 
-Run with:
-    python run.py
+Usage examples:
+    python run.py                    # Show catalog + status
+    python run.py alerts             # Run the management demo with alerts
+    python run.py cost               # Show cost attribution demo
+    python run.py forecast           # Show forecasting
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 import groky.catalog as catalog
+from examples import manage_demo, finops_demo
 
 
-def banner() -> None:
+def banner():
     print(r"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                           GROKY 2.0                                          ║
@@ -28,9 +33,8 @@ def banner() -> None:
 """.strip())
 
 
-def main() -> None:
+def cmd_status():
     banner()
-
     print("\nCatalog engaged. Modern reality loaded.\n")
 
     stats = catalog.summarize()
@@ -41,32 +45,53 @@ def main() -> None:
     print(f"  Retiring SKUs:       {stats['retiring_skus']}")
     print()
 
-    print("=== Modern Hardware We Actually Understand ===\n")
+    print("Run `python run.py alerts` to see real management alerts and recommendations.\n")
 
-    highlights = [
-        "Standard_ND96isr_H200_v5",
-        "Standard_NC40ads_H100_v5",
-        "Standard_ND96isr_H100_v5",
-        "Standard_NC32ads_H100_v5",
-        "Standard_NV36ads_A10_v5",
-        "Standard_NG32ads_V620_v1",
-        "Standard_nd96is_mi300x_v5",
-    ]
 
-    for sku in highlights:
-        spec = catalog.lookup(sku)
-        if spec:
-            print(f"  {sku:34} → {spec.pretty()}")
+def cmd_alerts():
+    print("Running management session with live alerting...\n")
+    manage_demo.main()
 
-    print("\n" + "─" * 70)
-    print("High-end dense nodes (≥4 full GPUs):")
-    for sku in catalog.get_high_end_nodes():
-        print(f"  - {sku}")
 
-    print("\n" + "─" * 70)
-    print("This catalog is why GROKY 2.0 is already ahead of the old tools.")
-    print("Everything else we build stands on this foundation.")
-    print("─" * 70 + "\n")
+def cmd_cost():
+    print("Running FinOps cost attribution demo...\n")
+    finops_demo.main()
+
+
+def cmd_forecast():
+    from groky import forecasting
+
+    print("Generating sample 30-day cost forecast...\n")
+    result = forecasting.generate_cost_forecast(
+        entity_name="prod-gpu-east-h100",
+        historical_data=[],
+        horizon_days=30,
+    )
+    print(f"Entity: {result.host_or_pool}")
+    print(f"Trend: {result.trend}")
+    print(f"30-day predicted cost: ${result.total_predicted_cost:,.2f}")
+    print(f"Anomaly risk: {result.anomaly_risk}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="GROKY 2.0 - GPU Management for AVD")
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("status", help="Show catalog and basic status")
+    subparsers.add_parser("alerts", help="Run full management + alerting demo")
+    subparsers.add_parser("cost", help="Run FinOps cost attribution demo")
+    subparsers.add_parser("forecast", help="Show predictive forecasting demo")
+
+    args = parser.parse_args()
+
+    if args.command == "alerts":
+        cmd_alerts()
+    elif args.command == "cost":
+        cmd_cost()
+    elif args.command == "forecast":
+        cmd_forecast()
+    else:
+        cmd_status()
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ Most AVD GPU monitoring tools are either:
 It talks directly to the GPUs on your session hosts using `nvidia-smi` and `rocm-smi`.  
 No agents. No ingestion bills. No guessing.
 
-It knows modern hardware properly — including fractional partitions on H100, H200, A10, MI300X and more.
+The goal is simple: **Help you actually manage your expensive GPU environment** — with real alerts, cost visibility, and actionable recommendations — not just pretty dashboards.
 
 ---
 
@@ -105,7 +105,15 @@ The first collection happens immediately.
 → **[Open the premium interactive demo →](docs/index.html)** (beautiful, no install required)
 
 **See real cost attribution in action:**  
-→ `python examples/finops_demo.py` (generates live cost-per-second + Azure tags + showback report)
+→ `python examples/finops_demo.py`
+
+**Run the management + alerting session:**
+→ `python run.py alerts`
+
+**Other useful commands:**
+- `python run.py` — basic status + catalog
+- `python run.py cost`
+- `python run.py forecast`
 
 ---
 
