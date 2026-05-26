@@ -28,34 +28,74 @@ from typing import Any, Optional
 @dataclass
 class ProfileHealth:
     """
-    Assessment of a single host's profile configuration health.
+    Rich assessment of a host's (or pool's) profile configuration health.
+
+    This is designed to be brutally honest about the state of user profiles,
+    which is one of the top reasons AVD deployments feel broken in production.
     """
     host_name: str
+
+    # Core FSLogix state
     fslogix_enabled: bool = False
+    fslogix_version: Optional[str] = None
     using_roaming_profiles: bool = False
+
+    # Container details
     profile_container_path: Optional[str] = None
-    storage_tier: Optional[str] = None          # "Premium", "Standard", "Ultra", etc.
-    container_size_gb: Optional[int] = None
+    storage_account: Optional[str] = None
+    storage_tier: Optional[str] = None          # Premium, Standard, etc.
+    container_size_gb: Optional[float] = None
+    container_growth_pattern: Optional[str] = None  # "normal", "exploding", "stagnant"
+
+    # Redirections & exclusions
     has_redirections: bool = False
-    common_misconfigs: list[str] = None         # e.g. ["No FSLogix", "Profile on C: drive", ...]
+    redirections_issues: list[str] = field(default_factory=list)
+
+    # Common real-world problems
+    common_misconfigs: list[str] = field(default_factory=list)
+    risk_level: str = "unknown"                 # low, medium, high, critical
 
     @property
     def health_score(self) -> int:
-        """0-100 score. 100 = perfect modern setup."""
+        """0-100 score. 100 = excellent modern FSLogix setup."""
         score = 100
+
         if not self.fslogix_enabled:
-            score -= 60
+            score -= 55
         if self.using_roaming_profiles:
-            score -= 40
+            score -= 45
+
         if self.profile_container_path and self.profile_container_path.lower().startswith("c:"):
-            score -= 25
-        if not self.has_redirections:
+            score -= 20
+        if self.storage_tier and self.storage_tier.lower() == "standard":
             score -= 15
+
+        if not self.has_redirections:
+            score -= 10
+        if self.redirections_issues:
+            score -= min(15, len(self.redirections_issues) * 5)
+
+        if self.risk_level == "critical":
+            score = min(score, 25)
+        elif self.risk_level == "high":
+            score = min(score, 45)
+
         return max(0, score)
 
     @property
     def is_broken(self) -> bool:
-        return self.health_score < 50
+        return self.health_score < 40
+
+    @property
+    def severity(self) -> str:
+        if self.health_score >= 80:
+            return "good"
+        elif self.health_score >= 60:
+            return "warning"
+        elif self.health_score >= 40:
+            return "bad"
+        else:
+            return "critical"
 
 
 @dataclass
@@ -77,34 +117,66 @@ class ProfileConfig:
 
 def analyze_profile_configuration(config: ProfileConfig, host_name: str = "unknown") -> ProfileHealth:
     """
-    Analyze a collected ProfileConfig and turn it into a scored ProfileHealth object.
+    Analyze a collected ProfileConfig and turn it into a rich, actionable ProfileHealth object.
 
-    This is the function that turns raw collected config data into actionable intelligence
-    about one of the most common reasons AVD deployments fail to deliver good experience.
+    This version is significantly more opinionated and tuned to real-world AVD disasters.
     """
     health = ProfileHealth(host_name=host_name)
     health.fslogix_enabled = config.fslogix_enabled
+    health.fslogix_version = config.fslogix_version
     health.using_roaming_profiles = config.is_roaming_enabled
     health.profile_container_path = config.vhd_locations[0] if config.vhd_locations else None
     health.has_redirections = bool(config.redir_xml_source)
 
-    # Basic storage tier inference (in a real collector we'd correlate with actual Azure resources)
+    # Storage tier detection
     if health.profile_container_path:
         path_lower = health.profile_container_path.lower()
-        if "premium" in path_lower or "ultra" in path_lower:
+        if any(x in path_lower for x in ["premium", "ultra"]):
             health.storage_tier = "Premium"
         elif "standard" in path_lower:
             health.storage_tier = "Standard"
 
     misconfigs = []
+    risk_factors = []
+
+    # === Critical issues ===
     if not health.fslogix_enabled:
-        misconfigs.append("FSLogix is not configured (or disabled)")
+        misconfigs.append("FSLogix is not configured or disabled")
+        risk_factors.append("critical")
+
     if health.using_roaming_profiles:
-        misconfigs.append("Legacy roaming profiles are enabled — one of the fastest ways to make AVD feel broken on GPU workloads")
+        misconfigs.append("Legacy roaming profiles are still enabled")
+        risk_factors.append("critical")
+
     if health.profile_container_path and health.profile_container_path.lower().startswith("c:"):
-        misconfigs.append("Profile containers appear to be writing to the OS disk")
+        misconfigs.append("Profile containers writing to OS disk (very dangerous)")
+        risk_factors.append("high")
+
+    # === High impact issues ===
     if health.storage_tier == "Standard":
-        misconfigs.append("Profile containers on Standard storage tier (high latency for profile operations)")
+        misconfigs.append("Profile containers on Standard storage (major source of latency)")
+        risk_factors.append("high")
+
+    if not health.has_redirections:
+        misconfigs.append("No redirections.xml detected (or not configured)")
+        risk_factors.append("high")
+
+    if config.profile_type is not None and config.profile_type != 0:
+        misconfigs.append(f"Non-standard ProfileType in use ({config.profile_type})")
+
+    # === Medium issues ===
+    if config.vhd_locations and len(config.vhd_locations) > 3:
+        misconfigs.append("Multiple VHDLocations configured — can cause confusion and performance issues")
+
+    # Risk level calculation
+    if "critical" in risk_factors:
+        health.risk_level = "critical"
+    elif "high" in risk_factors:
+        health.risk_level = "high"
+    elif risk_factors:
+        health.risk_level = "medium"
+    else:
+        health.risk_level = "low"
 
     health.common_misconfigs = misconfigs
     return health
@@ -112,8 +184,8 @@ def analyze_profile_configuration(config: ProfileConfig, host_name: str = "unkno
 
 def generate_profile_opportunities(health: ProfileHealth) -> list[dict]:
     """
-    Turn profile misconfigurations into Midas-style opportunities.
-    These get fed into the intelligence engine.
+    Convert profile configuration disasters into rich Midas-style opportunities.
+    These are some of the highest-impact "setup debt" items in AVD.
     """
     opportunities = []
 
@@ -121,35 +193,134 @@ def generate_profile_opportunities(health: ProfileHealth) -> list[dict]:
         opportunities.append({
             "type": "no_fslogix",
             "title": "No FSLogix configured",
-            "impact": "High risk of profile corruption, slow logons, and terrible user experience on GPU workloads.",
-            "recommendation": "Migrate to FSLogix profile containers immediately. This is table stakes for any serious AVD deployment.",
+            "impact": "Extremely high risk of profile corruption and terrible logon/experience performance, especially on GPU workloads.",
+            "recommendation": "Implement FSLogix profile containers as a priority. This is non-negotiable for production AVD.",
+            "category": "profile",
         })
 
     if health.using_roaming_profiles:
         opportunities.append({
             "type": "legacy_roaming_profiles",
-            "title": "Using legacy roaming profiles",
-            "impact": "One of the fastest ways to make AVD feel broken. High latency, profile bloat, and sync issues.",
-            "recommendation": "Disable roaming profiles and move to FSLogix containers. This is a top-5 AVD setup mistake.",
+            "title": "Legacy roaming profiles still active",
+            "impact": "One of the most common reasons AVD feels slow and unreliable. High sync latency and corruption risk.",
+            "recommendation": "Migrate away from roaming profiles to FSLogix containers immediately.",
+            "category": "profile",
         })
 
     if health.storage_tier and health.storage_tier.lower() == "standard":
         opportunities.append({
             "type": "profile_on_slow_storage",
             "title": "Profile containers on Standard storage",
-            "impact": "Users will experience high latency on profile operations, especially with GPU workloads.",
-            "recommendation": "Move profile containers to Premium SSD or Azure Files Premium.",
+            "impact": "Major contributor to profile-related latency and poor user experience.",
+            "recommendation": "Migrate containers to Premium file shares or Premium blob storage.",
+            "category": "profile",
         })
 
-    if health.health_score < 30:
+    if health.profile_container_path and health.profile_container_path.lower().startswith("c:"):
+        opportunities.append({
+            "type": "profile_on_os_disk",
+            "title": "Profile containers on OS disk",
+            "impact": "Very dangerous configuration. High risk of profile corruption and disk space issues.",
+            "recommendation": "Move containers off the OS disk immediately.",
+            "category": "profile",
+        })
+
+    if not health.has_redirections:
+        opportunities.append({
+            "type": "missing_redirections",
+            "title": "No redirections.xml configured",
+            "impact": "Unnecessary profile bloat and slower logons. Common source of 'my profile is huge' problems.",
+            "recommendation": "Implement a proper redirections.xml with sensible exclusions.",
+            "category": "profile",
+        })
+
+    if health.risk_level == "critical":
         opportunities.append({
             "type": "catastrophic_profile_setup",
-            "title": "Severely broken profile configuration",
-            "impact": "This is one of the main reasons people say 'AVD is slow/unusable'. High chance of profile corruption and terrible experience.",
-            "recommendation": "Treat this as a P1 remediation item. Rebuild the profile architecture properly using FSLogix on good storage.",
+            "title": "Critical profile configuration issues detected",
+            "impact": "This environment is likely experiencing frequent profile problems and user complaints.",
+            "recommendation": "Treat profile remediation as a high-priority project. Consider engaging someone experienced with FSLogix.",
+            "category": "profile",
         })
 
     return opportunities
+
+
+# =============================================================================
+# FSLogix Profile Restoration & Recovery Toolkit
+# =============================================================================
+#
+# This section is for helping with one of the most painful parts of AVD operations:
+# busted or corrupted FSLogix profile containers.
+#
+# Goal: Provide smart analysis, safe inspection, and guided recovery steps
+# without relying on fragile PowerShell one-liners that break with every MS change.
+
+@dataclass
+class ProfileContainerHealth:
+    container_path: str
+    exists: bool = False
+    size_gb: Optional[float] = None
+    last_modified_days: Optional[int] = None
+    is_locked: bool = False
+    has_vhdx: bool = False
+    corruption_risk: str = "unknown"   # low, medium, high, critical
+    recommended_action: str = ""
+
+
+def analyze_profile_container_health(container_info: dict) -> ProfileContainerHealth:
+    """
+    Analyze a single FSLogix container (VHD/VHDX) for health indicators.
+
+    This can be fed data from Azure storage queries or from a mounted inspection.
+    """
+    health = ProfileContainerHealth(
+        container_path=container_info.get("path", "unknown")
+    )
+
+    health.exists = container_info.get("exists", False)
+    health.size_gb = container_info.get("size_gb")
+    health.last_modified_days = container_info.get("last_modified_days")
+    health.is_locked = container_info.get("is_locked", False)
+    health.has_vhdx = container_info.get("has_vhdx", False)
+
+    risk = "low"
+    action = "Appears healthy."
+
+    if not health.exists:
+        risk = "high"
+        action = "Container is missing. User will get a new profile on next logon."
+    elif health.is_locked:
+        risk = "medium"
+        action = "Container is locked (user may still be logged on or previous session didn't clean up)."
+    elif health.last_modified_days and health.last_modified_days > 180:
+        risk = "medium"
+        action = "Very old container. Consider archival or cleanup policies."
+
+    health.corruption_risk = risk
+    health.recommended_action = action
+
+    return health
+
+
+def get_profile_recovery_guidance(health: ProfileContainerHealth) -> list[str]:
+    """Return step-by-step guidance for common busted profile scenarios."""
+    guidance = []
+
+    if not health.exists:
+        guidance.append("Do not manually delete user folders. Let FSLogix create a fresh container on next logon.")
+        guidance.append("Investigate why the container disappeared (storage permissions, backup policies, etc.).")
+
+    if health.is_locked:
+        guidance.append("Check if the user still has active sessions.")
+        guidance.append("If safe, consider using the FSLogix tool to forcibly unlock the container (with caution).")
+
+    if health.corruption_risk in ("high", "critical"):
+        guidance.append("Do not delete the VHD without a backup.")
+        guidance.append("Consider using the FSLogix Profile Migration or recovery tools.")
+        guidance.append("In extreme cases, mount the VHD manually and copy out important data (NTUSER.DAT, AppData, etc.).")
+
+    return guidance
 
 
 # =============================================================================

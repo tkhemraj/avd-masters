@@ -333,6 +333,85 @@ def generate_executive_summary(
     return "\n".join(lines)
 
 
+# =============================================================================
+# 6. AVD Best Practices Analyzer (BPA)
+# =============================================================================
+#
+# Microsoft has BPAs for SQL, Exchange, etc. They don't really have a good one for AVD.
+# This is our attempt to build one that actually matters.
+
+@dataclass
+class BPACheck:
+    id: str
+    title: str
+    category: str
+    severity: str          # "critical", "high", "medium", "low", "info"
+    passed: bool
+    details: str
+    recommendation: str
+
+
+def run_avd_best_practices_analyzer(
+    environment: dict[str, Any]
+) -> list[BPACheck]:
+    """
+    Comprehensive (but evolving) Best Practices Analyzer for AVD environments.
+
+    This is designed to be useful for teams that aren't AVD experts.
+    """
+    checks = []
+
+    # Profile related
+    profile_health_avg = environment.get("avg_profile_health_score", 70)
+    checks.append(BPACheck(
+        id="PROFILE-001",
+        title="FSLogix Configuration Health",
+        category="Profiles",
+        severity="critical" if profile_health_avg < 50 else "high" if profile_health_avg < 70 else "medium",
+        passed=profile_health_avg >= 70,
+        details=f"Average profile configuration health score: {profile_health_avg}/100",
+        recommendation="Review and fix profile/FSLogix configuration. This is one of the highest impact areas.",
+    ))
+
+    # Scaling
+    has_smart_autoscale = environment.get("has_experience_aware_autoscale", False)
+    checks.append(BPACheck(
+        id="SCALE-001",
+        title="Experience-Aware Autoscale",
+        category="Host Pools & Scaling",
+        severity="high",
+        passed=has_smart_autoscale,
+        details="Autoscale rules do not currently factor in user experience metrics.",
+        recommendation="Consider adjusting autoscale to react to latency/frame time in addition to CPU/GPU utilization.",
+    ))
+
+    # Images
+    drift = environment.get("image_drift_detected", False)
+    checks.append(BPACheck(
+        id="IMAGE-001",
+        title="Image & Driver Consistency",
+        category="Images & Golden Images",
+        severity="high" if drift else "low",
+        passed=not drift,
+        details="Image or GPU driver drift detected across host pools." if drift else "No significant drift detected.",
+        recommendation="Standardize images and GPU driver versions across pools where possible.",
+    ))
+
+    # Cost / Waste
+    high_waste = environment.get("recoverable_gold_pct", 0) > 25
+    checks.append(BPACheck(
+        id="COST-001",
+        title="GPU Cost Efficiency",
+        category="FinOps & Waste",
+        severity="medium" if high_waste else "low",
+        passed=not high_waste,
+        details=f"{environment.get('recoverable_gold_pct', 0):.0f}% of GPU spend identified as potentially recoverable.",
+        recommendation="Run Midas analysis and prioritize high-confidence opportunities.",
+    ))
+
+    return checks
+
+
 __all__ = [
     "ProfileStorageAnalysis",
     "analyze_profile_storage",
@@ -344,4 +423,7 @@ __all__ = [
     "OrphanedResource",
     "find_likely_orphaned_resources",
     "quick_avd_health_check",
+    "BPACheck",
+    "run_avd_best_practices_analyzer",
+    "generate_executive_summary",
 ]
