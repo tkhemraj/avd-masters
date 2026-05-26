@@ -1,4 +1,4 @@
-# GROKY 2.0
+# AVD Masters
 
 **The professional GPU monitoring and management platform for Azure Virtual Desktop.**
 
@@ -20,7 +20,7 @@ Most tools for monitoring GPU workloads on AVD are either:
 - **Inaccurate** — Sampled data that fails on fractional GPUs
 - **Shallow** — Pretty dashboards with very little actionable value
 
-**GROKY 2.0 exists to fix this.**
+**AVD Masters exists to fix this.**
 
 ---
 

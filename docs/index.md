@@ -1,10 +1,10 @@
-# GROKY 2.0 Documentation
+# AVD Masters Documentation
 
 **Professional documentation for a professional management platform.**
 
-Welcome to the official documentation for **[GROKY 2.0](https://github.com/tkhemraj/avd-masters)** — the direct, agentless GPU monitoring and management platform for Azure Virtual Desktop.
+Welcome to the official documentation for **[AVD Masters](https://github.com/tkhemraj/avd-masters)** — the direct, agentless GPU monitoring and management platform for Azure Virtual Desktop.
 
-GROKY is built for teams that need **real visibility, real alerts, and real recommendations** — not just another dashboard.
+AVD Masters is built for teams that need **real visibility, real alerts, and real recommendations** — not just another dashboard.
 
 ---
 
@@ -15,7 +15,7 @@ GROKY is built for teams that need **real visibility, real alerts, and real reco
 | [Getting Started](getting-started.md) | Installation and first-run guide |
 | **[Live Demo](index.html)** | Beautiful, interactive product experience |
 | [The Catalog](catalog.md) | The most accurate Azure GPU SKU reference available |
-| [Architecture](architecture.md) | How GROKY is designed and why it works |
+| [Architecture](architecture.md) | How AVD Masters is designed and why it works |
 | [Configuration](configuration.md) | Environment variables and hosts.yaml |
 
 ---
@@ -32,7 +32,7 @@ GROKY is built for teams that need **real visibility, real alerts, and real reco
 
 ## Philosophy
 
-GROKY prioritizes:
+AVD Masters prioritizes:
 
 - **Direct hardware truth** over sampled approximations
 - **Actionable intelligence** over pretty visualizations
@@ -41,4 +41,4 @@ GROKY prioritizes:
 
 ---
 
-This documentation is intentionally concise. GROKY is designed to be straightforward to operate.
+This documentation is intentionally concise. AVD Masters is designed to be straightforward to operate.

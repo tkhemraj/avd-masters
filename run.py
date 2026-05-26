@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Main Entry Point
+AVD Masters — Main Entry Point
 
 This is the real command line interface for managing your AVD GPU environment.
 
@@ -18,14 +18,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import groky.catalog as catalog
+import avd_masters.catalog as catalog
 from examples import manage_demo, finops_demo
 
 
 def banner():
     print(r"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           GROKY 2.0                                          ║
+║                           AVD Masters                                          ║
 ║                                                                              ║
 ║           Direct Hardware Truth for Azure Virtual Desktop                    ║
 ║                    No lies. No bills. Just silicon.                          ║
@@ -59,7 +59,7 @@ def cmd_cost():
 
 
 def cmd_forecast():
-    from groky import forecasting
+    from avd_masters import forecasting
 
     print("Generating sample 30-day cost forecast...\n")
     result = forecasting.generate_cost_forecast(
@@ -74,7 +74,7 @@ def cmd_forecast():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="GROKY 2.0 - GPU Management for AVD")
+    parser = argparse.ArgumentParser(description="AVD Masters - GPU Management for AVD")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("status", help="Show catalog and basic status")

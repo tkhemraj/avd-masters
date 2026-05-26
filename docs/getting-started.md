@@ -1,4 +1,4 @@
-# Getting Started with GROKY 2.0
+# Getting Started with AVD Masters
 
 This guide will get you running quickly with the right mindset.
 
@@ -44,7 +44,7 @@ You can also create a `hosts.yaml` for per-host overrides.
 python run.py
 ```
 
-GROKY will:
+AVD Masters will:
 1. Load the world-class GPU catalog
 2. Start the web server on port 8080
 3. Begin discovery + collection immediately

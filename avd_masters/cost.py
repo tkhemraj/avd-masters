@@ -20,7 +20,8 @@ from typing import Optional
 
 import requests
 
-from groky.catalog import GpuSpec, lookup
+from avd_masters.catalog import GpuSpec, lookup
+from avd_masters import sku_discovery
 
 logger = logging.getLogger(__name__)
 
@@ -229,3 +230,28 @@ def get_cost_summary_for_host(
         "cost_per_second": calculate_cost_per_second(spec, sku, region),
         "cost_per_hour": calculate_gpu_hourly_cost(spec, sku, region),
     }
+
+
+def auto_tag_host_with_live_sku(
+    host_name: str,
+    sku: str,
+    gpu_seconds: float,
+    region: str,
+    compute_client=None,
+) -> dict[str, str]:
+    """
+    Auto-tag a host using the freshest SKU data available.
+
+    If a compute_client is provided, it will attempt to refresh SKU info for the region.
+    """
+    spec = lookup(sku)
+
+    if compute_client and not spec:
+        live = sku_discovery.fetch_gpu_skus_for_regions(compute_client, [region])
+        if sku.lower() in live:
+            spec = live[sku.lower()]
+
+    if not spec:
+        spec = GpuSpec("nvidia", "Unknown", 1.0, 0)
+
+    return generate_cost_tags(host_name, spec, sku, gpu_seconds, region)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GROKY 2.0 — "Help Me Manage My Shit" Demo
+AVD Masters — "Help Me Manage My Shit" Demo
 
 This is the kind of thing you actually run when you care about your AVD GPU environment.
 
@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from groky import alerting, catalog, cost, forecasting, optimizer
+from avd_masters import alerting, catalog, cost, forecasting, optimizer
 
 
 def create_sample_contexts():
@@ -56,7 +56,7 @@ def create_sample_contexts():
 
 def main():
     print("\n" + "=" * 80)
-    print("GROKY 2.0 — Management Session".center(80))
+    print("AVD Masters — Management Session".center(80))
     print("Helping you actually manage your GPU shit".center(80))
     print("=" * 80 + "\n")
 
@@ -129,7 +129,7 @@ def main():
         print("→ Your environment looks healthy. Good job.")
     print("=" * 80 + "\n")
 
-    print("This is the direction GROKY is going: real alerts + real recommendations you can act on.")
+    print("This is the direction AVD Masters is going: real alerts + real recommendations you can act on.")
     print("Not just pretty charts.")
 
 

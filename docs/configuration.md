@@ -1,6 +1,6 @@
 # Configuration
 
-GROKY 2.0 is deliberately simple to configure.
+AVD Masters is deliberately simple to configure.
 
 ## Environment Variables (`.env`)
 

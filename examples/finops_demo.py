@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GROKY 2.0 — FinOps Demo
+AVD Masters — FinOps Demo
 
 This script demonstrates the cost attribution and auto-tagging capabilities.
 
@@ -18,19 +18,19 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-# Import from the groky package
+# Import from the avd_masters package
 import sys
 from pathlib import Path
 
 # Allow running from the project root without installation
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from groky import catalog, cost
+from avd_masters import catalog, cost
 
 
 def main():
     print("╔" + "═" * 70 + "╗")
-    print("║" + " GROKY 2.0 — FinOps & Cost Attribution Demo".center(70) + "║")
+    print("║" + " AVD Masters — FinOps & Cost Attribution Demo".center(70) + "║")
     print("╚" + "═" * 70 + "╝")
     print()
 
@@ -113,7 +113,7 @@ def main():
 
     total_cost = sum(r["cost"] or 0 for r in report_rows)
 
-    print("GROKY FinOps Showback Report")
+    print("AVD Masters FinOps Showback Report")
     print(f"Generated: {datetime.now(timezone.utc).isoformat()}\n")
     print(f"{'Host':<25} {'GPU Model':<12} {'Est. Cost (USD)':>15}")
     print("-" * 55)
@@ -132,8 +132,24 @@ def main():
     print("  • Used for internal chargeback to business units")
     print()
 
+    # === Dynamic SKU + Auto Tagging demo ===
+    print("=== 4. Dynamic SKU Lookup + Auto-Tagging (on load) ===\n")
+    print("AVD Masters can now:")
+    print("  - Discover current GPU SKUs from Azure for every region you have resources in")
+    print("  - Auto-apply rich tags with live cost data on every poll/load")
+    print("  - Stay fresh instead of relying on a static 2025-era list\n")
+
+    print("Example auto-tag call with live SKU data (stubbed for demo):")
+    print("  tags = avd_masters.cost.auto_tag_host_with_live_sku(")
+    print("      host_name='avd-h100-01',")
+    print("      sku='Standard_NC32ads_H100_v5',")
+    print("      gpu_seconds=180000,")
+    print("      region='eastus',")
+    print("      compute_client=your_azure_compute_client")
+    print("  )\n")
+
     print("╔" + "═" * 70 + "╗")
-    print("║" + " End of FinOps Demo — Real cost visibility, zero Azure Monitor tax ".center(70) + "║")
+    print("║" + " End of FinOps Demo — Real cost visibility + dynamic SKUs + auto-tagging ".center(70) + "║")
     print("╚" + "═" * 70 + "╝")
 
 

@@ -1,6 +1,6 @@
 # Architecture
 
-GROKY 2.0 is built with deliberate simplicity and high standards.
+AVD Masters is built with deliberate simplicity and high standards.
 
 ## Core Principles
 
@@ -24,15 +24,15 @@ Most solutions either:
 - Require installing agents everywhere (operational burden)
 - Use outdated SKU data (wrong math on fractional GPUs)
 
-GROKY does none of these.
+AVD Masters does none of these.
 
 ---
 
 ## Current Layers (Foundation Phase)
 
-- `groky/catalog.py` — Best-in-class SKU intelligence
-- `groky/models.py` — Clean, typed data contracts
-- `groky/types.py` — Shared primitives
+- `avd_masters/catalog.py` — Best-in-class SKU intelligence
+- `avd_masters/models.py` — Clean, typed data contracts
+- `avd_masters/types.py` — Shared primitives
 
 The collection, scheduling, and dashboard layers are coming next — built on this solid base.
 

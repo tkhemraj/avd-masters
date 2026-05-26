@@ -255,6 +255,19 @@ def all_skus() -> list[str]:
     return sorted(CATALOG.keys())
 
 
+def refresh_from_azure(compute_client, regions: list[str]) -> int:
+    """
+    Dynamically refresh the catalog using live Azure data for the given regions.
+    Returns number of SKUs added/updated.
+    """
+    from avd_masters.sku_discovery import fetch_gpu_skus_for_regions
+
+    live = fetch_gpu_skus_for_regions(compute_client, regions)
+    before = len(CATALOG)
+    CATALOG.update({k.lower(): v for k, v in live.items()})
+    return len(CATALOG) - before
+
+
 def get_retiring_skus() -> list[str]:
     return sorted(s for s, spec in CATALOG.items() if spec.retiring)
 

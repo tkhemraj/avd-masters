@@ -14,12 +14,12 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from groky.types import Vendor, HostStatus, ImbalanceLabel
+from avd_masters.types import Vendor, HostStatus, ImbalanceLabel
 
 # Optional forward reference for cost data
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from groky.cost import CostSummary
+    from avd_masters.cost import CostSummary
 
 
 # =============================================================================
@@ -118,7 +118,7 @@ class HostStatusModel(BaseModel):
 
     gpus: list[HostGpu] = Field(default_factory=list)
 
-    # FinOps / Cost fields (populated by groky.cost)
+    # FinOps / Cost fields (populated by avd_masters.cost)
     estimated_hourly_cost_usd: Optional[float] = None
     total_gpu_seconds: float = 0.0
     estimated_cost_usd: Optional[float] = None

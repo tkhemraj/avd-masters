@@ -1,8 +1,8 @@
-# GROKY GPU Catalog
+# AVD Masters GPU Catalog
 
-This is the heart of GROKY 2.0.
+This is the heart of AVD Masters.
 
-While other tools are still using stale 2025-era SKU lists, GROKY ships with a rich, accurate, and queryable model of **real** Azure GPU hardware — including proper fractional GPU support.
+While other tools are still using stale 2025-era SKU lists, AVD Masters ships with a rich, accurate, and queryable model of **real** Azure GPU hardware — including proper fractional GPU support.
 
 ---
 
@@ -13,7 +13,7 @@ Most monitoring solutions either:
 - Treat every partition like a full GPU
 - Have outdated data
 
-GROKY's `GpuSpec` knows the truth:
+AVD Masters' `GpuSpec` knows the truth:
 
 - Exact `gpu_count` (supports 0.166 = 1/6, 0.25 = 1/4, etc.)
 - Assigned VRAM per partition
@@ -25,7 +25,7 @@ GROKY's `GpuSpec` knows the truth:
 ## Key Capabilities
 
 ```python
-import groky.catalog as c
+import avd_masters.catalog as c
 
 # Rich objects
 spec = c.lookup("Standard_ND96isr_H200_v5")
@@ -74,7 +74,7 @@ c.get_skus_by_model("H100")
 
 ## Full SKU Reference
 
-> For the complete machine-readable list, see `groky/catalog.py`
+> For the complete machine-readable list, see `avd_masters/catalog.py`
 
 ### Notable Modern SKUs
 
@@ -98,4 +98,4 @@ Every `GpuSpec` is a first-class object with computed properties so the rest of 
 
 ---
 
-**This catalog is why GROKY already feels different.**
+**This catalog is why AVD Masters already feels different.**

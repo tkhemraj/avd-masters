@@ -1,8 +1,8 @@
-# GROKY 2.0 — MEGA FEATURES
+# AVD Masters — MEGA FEATURES
 
-> The ambitious, high-impact capabilities that would position GROKY as a true enterprise platform.
+> The ambitious, high-impact capabilities that would position AVD Masters as a true enterprise platform.
 
-These features go beyond traditional monitoring. They aim to make GROKY the central nervous system for GPU economics, operations, and governance on Azure.
+These features go beyond traditional monitoring. They aim to make AVD Masters the central nervous system for GPU economics, operations, and governance on Azure.
 
 ---
 
@@ -18,7 +18,7 @@ Stop reacting to cost problems. Start seeing them coming weeks or months in adva
 - Confidence intervals on predictions
 
 **Strategic Value**  
-Transforms GROKY from an operational tool into a **financial planning and risk management** tool — something finance and leadership teams would actually use.
+Transforms AVD Masters from an operational tool into a **financial planning and risk management** tool — something finance and leadership teams would actually use.
 
 ---
 
@@ -34,7 +34,7 @@ Tell organizations exactly where every workload *should* run for the best perfor
 - Support for migration planning between host pools and SKUs
 
 **Strategic Value**  
-This is the "holy grail" for AVD platform teams. Most companies are making placement decisions with almost no data. GROKY becomes the **recommended brain** for workload placement.
+This is the "holy grail" for AVD platform teams. Most companies are making placement decisions with almost no data. AVD Masters becomes the **recommended brain** for workload placement.
 
 ---
 
@@ -83,7 +83,7 @@ One brain for hundreds of subscriptions, many teams, and complex organizational 
 - Executive rollup views with drill-down
 
 **Strategic Value**  
-This is what turns GROKY from "a tool for one team" into **the operating system for an organization's entire GPU strategy on Azure**.
+This is what turns AVD Masters from "a tool for one team" into **the operating system for an organization's entire GPU strategy on Azure**.
 
 ---
 
@@ -97,7 +97,7 @@ This is what turns GROKY from "a tool for one team" into **the operating system 
 
 ## Strategic Positioning
 
-These Mega Features are designed to evolve GROKY from:
+These Mega Features are designed to evolve AVD Masters from:
 
 > "A better, cheaper GPU monitor"
 
