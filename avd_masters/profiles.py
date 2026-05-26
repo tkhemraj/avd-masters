@@ -304,21 +304,30 @@ def analyze_profile_container_health(container_info: dict) -> ProfileContainerHe
 
 
 def get_profile_recovery_guidance(health: ProfileContainerHealth) -> list[str]:
-    """Return step-by-step guidance for common busted profile scenarios."""
+    """
+    Practical, battle-tested style guidance for dealing with busted FSLogix containers.
+
+    This is written from the perspective of someone who has had to clean up these messes.
+    """
     guidance = []
 
     if not health.exists:
-        guidance.append("Do not manually delete user folders. Let FSLogix create a fresh container on next logon.")
-        guidance.append("Investigate why the container disappeared (storage permissions, backup policies, etc.).")
+        guidance.append("Do NOT just delete the user's Windows profile folder. Let FSLogix recreate the container cleanly on next logon.")
+        guidance.append("Investigate root cause: storage permissions, lifecycle policies deleting VHDs, backup software, etc.")
 
     if health.is_locked:
-        guidance.append("Check if the user still has active sessions.")
-        guidance.append("If safe, consider using the FSLogix tool to forcibly unlock the container (with caution).")
+        guidance.append("First check for lingering sessions (including disconnected ones).")
+        guidance.append("Only after confirming the user is fully logged off should you consider forcibly unlocking.")
+        guidance.append("Document the unlock — this is a common source of future corruption.")
 
     if health.corruption_risk in ("high", "critical"):
-        guidance.append("Do not delete the VHD without a backup.")
-        guidance.append("Consider using the FSLogix Profile Migration or recovery tools.")
-        guidance.append("In extreme cases, mount the VHD manually and copy out important data (NTUSER.DAT, AppData, etc.).")
+        guidance.append("Treat the VHD as potentially corrupt. Do not delete without a backup or export attempt.")
+        guidance.append("Preferred path: Use Microsoft's FSLogix tools or the container recovery process if available.")
+        guidance.append("Nuclear option: Mount the VHD on a clean machine and selectively copy out user data (Desktop, Documents, AppData\\Roaming, etc.).")
+        guidance.append("After recovery, strongly consider resetting the container for that user.")
+
+    if health.last_modified_days and health.last_modified_days > 365:
+        guidance.append("This container is over a year old. Strongly consider whether the user actually needs the full history or if a fresh profile is safer.")
 
     return guidance
 
