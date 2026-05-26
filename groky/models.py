@@ -16,6 +16,11 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from groky.types import Vendor, HostStatus, ImbalanceLabel
 
+# Optional forward reference for cost data
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from groky.cost import CostSummary
+
 
 # =============================================================================
 # Raw Hardware Samples
@@ -113,6 +118,12 @@ class HostStatusModel(BaseModel):
 
     gpus: list[HostGpu] = Field(default_factory=list)
 
+    # FinOps / Cost fields (populated by groky.cost)
+    estimated_hourly_cost_usd: Optional[float] = None
+    total_gpu_seconds: float = 0.0
+    estimated_cost_usd: Optional[float] = None
+    cost_tags: dict[str, str] = Field(default_factory=dict)
+
 
 class PoolAnalysis(BaseModel):
     """
@@ -141,6 +152,11 @@ class PoolAnalysis(BaseModel):
     heavy_hosts: list[str] = Field(default_factory=list)
 
     hosts: list[HostStatusModel] = Field(default_factory=list)
+
+    # Aggregated FinOps metrics
+    total_estimated_cost_usd: Optional[float] = None
+    total_gpu_seconds: float = 0.0
+    cost_by_model: dict[str, float] = Field(default_factory=dict)  # e.g. {"H100": 124.50}
 
 
 # =============================================================================

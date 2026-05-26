@@ -1,0 +1,231 @@
+"""
+GROKY 2.0 — FinOps / Cost Attribution Module
+
+This module enables real cost calculation and auto-tagging capabilities.
+
+Core idea:
+- Calculate accurate **cost per GPU-second** for any SKU we monitor.
+- Support different pricing models (PayGo, Reserved, Spot).
+- Provide data that can be used for Azure tagging, showback, and chargeback.
+
+This is one of the highest-value features for large Microsoft customers.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional
+
+import requests
+
+from groky.catalog import GpuSpec, lookup
+
+logger = logging.getLogger(__name__)
+
+# =============================================================================
+# Pricing Models
+# =============================================================================
+
+@dataclass
+class PricingModel:
+    name: str                    # "paygo", "reserved", "spot"
+    discount: float = 1.0        # 1.0 = full price, 0.7 = 30% off, etc.
+
+
+PAYGO = PricingModel("paygo", 1.0)
+RESERVED = PricingModel("reserved", 0.60)   # Rough average for 1-year RI
+SPOT = PricingModel("spot", 0.40)           # Very rough average
+
+DEFAULT_PRICING = PAYGO
+
+
+# =============================================================================
+# Azure Retail Prices API Client (lightweight)
+# =============================================================================
+
+AZURE_PRICES_API = "https://prices.azure.com/api/retail/prices"
+
+# Simple in-memory cache (in real usage this would be smarter)
+_price_cache: dict[str, float] = {}
+_cache_ttl = timedelta(hours=6)
+_cache_time: Optional[datetime] = None
+
+
+def get_gpu_hourly_price(sku: str, region: str = "eastus") -> Optional[float]:
+    """
+    Fetch approximate hourly price for a GPU VM SKU from Azure Retail Prices API.
+
+    This is best-effort. Real enterprises often have negotiated rates.
+    """
+    global _cache_time
+
+    cache_key = f"{sku.lower()}:{region}"
+
+    # Use cache if fresh
+    if _cache_time and datetime.utcnow() - _cache_time < _cache_ttl:
+        if cache_key in _price_cache:
+            return _price_cache[cache_key]
+
+    try:
+        # The Azure Retail Prices API uses 'serviceName' and 'productName' filters.
+        # This is a simplified query focused on Virtual Machines.
+        params = {
+            "api-version": "2023-01-01-preview",
+            "$filter": f"serviceName eq 'Virtual Machines' and armRegionName eq '{region}' and contains(skuName, '{sku.split('_')[-1]}')",
+        }
+
+        resp = requests.get(AZURE_PRICES_API, params=params, timeout=8)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # Find the best matching item (very heuristic)
+        for item in data.get("Items", []):
+            if "GPU" in item.get("productName", "") or "H100" in item.get("skuName", "") or "A10" in item.get("skuName", ""):
+                price = float(item.get("retailPrice", 0))
+                if price > 0:
+                    _price_cache[cache_key] = price
+                    _cache_time = datetime.utcnow()
+                    return price
+
+        # Fallback: just take the first result if any
+        if data.get("Items"):
+            price = float(data["Items"][0].get("retailPrice", 0))
+            if price > 0:
+                _price_cache[cache_key] = price
+                _cache_time = datetime.utcnow()
+                return price
+
+    except Exception as exc:
+        logger.warning("Failed to fetch Azure price for %s: %s", sku, exc)
+
+    return None
+
+
+# =============================================================================
+# Cost Calculation
+# =============================================================================
+
+def calculate_gpu_hourly_cost(
+    spec: GpuSpec,
+    sku: str,
+    region: str = "eastus",
+    pricing: PricingModel = DEFAULT_PRICING,
+) -> Optional[float]:
+    """
+    Estimate the hourly cost attributable to the GPUs on this SKU.
+
+    This is an approximation. Real cost depends on many factors
+    (software licensing, storage, networking, reserved pricing, etc.).
+    """
+    # First try to get real price from Azure
+    full_vm_price = get_gpu_hourly_price(sku, region)
+
+    if full_vm_price is None:
+        # Very rough fallback estimates (USD) for common GPU VMs
+        fallback_prices = {
+            "h100": 4.50,
+            "a100": 3.20,
+            "a10": 1.80,
+            "v620": 1.10,
+            "l40s": 2.10,
+            "mi300x": 5.80,
+        }
+        model_lower = spec.model.lower()
+        full_vm_price = next(
+            (price for key, price in fallback_prices.items() if key in model_lower),
+            2.50,  # generic fallback
+        )
+
+    # Adjust for fractional GPUs and pricing model
+    gpu_cost = full_vm_price * spec.gpu_count * pricing.discount
+    return round(gpu_cost, 4)
+
+
+def calculate_cost_per_second(
+    spec: GpuSpec,
+    sku: str,
+    region: str = "eastus",
+    pricing: PricingModel = DEFAULT_PRICING,
+) -> Optional[float]:
+    """Cost per GPU-second for this spec."""
+    hourly = calculate_gpu_hourly_cost(spec, sku, region, pricing)
+    if hourly is None:
+        return None
+    return hourly / 3600
+
+
+def estimate_cost_for_samples(
+    gpu_seconds: float,
+    spec: GpuSpec,
+    sku: str,
+    region: str = "eastus",
+    pricing: PricingModel = DEFAULT_PRICING,
+) -> Optional[float]:
+    """
+    Given total GPU-seconds consumed, return estimated dollar cost.
+    """
+    per_second = calculate_cost_per_second(spec, sku, region, pricing)
+    if per_second is None:
+        return None
+    return round(gpu_seconds * per_second, 4)
+
+
+# =============================================================================
+# Azure Tag Generation (for auto-tagging)
+# =============================================================================
+
+def generate_cost_tags(
+    host_name: str,
+    spec: GpuSpec,
+    sku: str,
+    gpu_seconds: float,
+    region: str = "eastus",
+    pricing: PricingModel = DEFAULT_PRICING,
+) -> dict[str, str]:
+    """
+    Generate a set of Azure tags with cost attribution data.
+
+    These can be applied via Azure SDK, Azure Policy, or exported for tagging tools.
+    """
+    hourly_cost = calculate_gpu_hourly_cost(spec, sku, region, pricing)
+    per_second = calculate_cost_per_second(spec, sku, region, pricing) or 0
+    total_cost = estimate_cost_for_samples(gpu_seconds, spec, sku, region, pricing) or 0
+
+    tags = {
+        "groky:monitored": "true",
+        "groky:gpu-model": spec.model,
+        "groky:gpu-count": str(spec.gpu_count),
+        "groky:sku": sku,
+        "groky:cost-model": pricing.name,
+        "groky:cost-per-hour": f"{hourly_cost:.4f}" if hourly_cost else "unknown",
+        "groky:cost-per-second": f"{per_second:.8f}",
+        "groky:total-cost-estimate": f"{total_cost:.4f}",
+        "groky:last-calculated": datetime.utcnow().isoformat(),
+    }
+    return tags
+
+
+# =============================================================================
+# Convenience
+# =============================================================================
+
+def get_cost_summary_for_host(
+    host_name: str,
+    spec: GpuSpec,
+    sku: str,
+    total_gpu_seconds: float,
+    region: str = "eastus",
+) -> dict:
+    """Return a nice summary dict for reporting / API use."""
+    return {
+        "host": host_name,
+        "sku": sku,
+        "gpu_model": spec.model,
+        "gpu_count": spec.gpu_count,
+        "total_gpu_seconds": total_gpu_seconds,
+        "estimated_cost_usd": estimate_cost_for_samples(total_gpu_seconds, spec, sku, region),
+        "cost_per_second": calculate_cost_per_second(spec, sku, region),
+        "cost_per_hour": calculate_gpu_hourly_cost(spec, sku, region),
+    }

@@ -79,6 +79,8 @@ print(c.lookup('Standard_NC4ads_H100_v5').pretty())
 
 See the full catalog: [docs/catalog.md](docs/catalog.md)
 
+**New in GROKY 2.0:** Real FinOps cost attribution. We can now calculate accurate cost-per-GPU-second and generate Azure tags automatically. This is a game changer for enterprise chargeback and cost optimization.
+
 ---
 
 ## Quick Start
@@ -112,12 +114,16 @@ We're building this in public with high standards.
 - World-class GPU catalog (41 SKUs, rich models)
 - Clean modern Pydantic data layer
 - Strong architectural foundation
+- Early FinOps cost attribution (cost per second + auto-tagging)
 
-**Coming soon:**
-- Hardened, resilient collectors
-- Powerful analysis engine
-- Beautiful real-time dashboard
-- Long-term storage options
+**High-value enterprise features in progress:**
+- Real cost attribution & Azure auto-tagging
+- Optimization recommendations with dollar impact
+- Governance & policy engine
+- Chargeback / showback reporting
+- Lightweight Azure integration (Event Grid, Logic Apps, etc.)
+
+See [FEATURES.md](FEATURES.md) for details.
 
 ---
 
