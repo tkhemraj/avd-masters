@@ -141,6 +141,14 @@ def generate_profile_opportunities(health: ProfileHealth) -> list[dict]:
             "recommendation": "Move profile containers to Premium SSD or Azure Files Premium.",
         })
 
+    if health.health_score < 30:
+        opportunities.append({
+            "type": "catastrophic_profile_setup",
+            "title": "Severely broken profile configuration",
+            "impact": "This is one of the main reasons people say 'AVD is slow/unusable'. High chance of profile corruption and terrible experience.",
+            "recommendation": "Treat this as a P1 remediation item. Rebuild the profile architecture properly using FSLogix on good storage.",
+        })
+
     return opportunities
 
 
