@@ -280,7 +280,8 @@ def create_default_alert_engine() -> AlertEngine:
     engine.add_rule(rule_high_cost_burn)
     engine.add_rule(rule_severe_imbalance)
     engine.add_rule(rule_forecast_overrun)
-    engine.add_rule(rule_high_latency)  # New: because expensive GPUs that feel bad are the worst kind of waste
+    engine.add_rule(rule_high_latency)
+    # Profile misconfiguration rules would be added here once we have real profile collectors
     return engine
 
 

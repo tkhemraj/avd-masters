@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from avd_masters import alerting, catalog, cost, signals
+from avd_masters import alerting, catalog, cost, profiles, signals
 from avd_masters.catalog import GpuSpec
 from avd_masters.signals import FleetSignals, HostSignal
 
@@ -631,6 +631,34 @@ def run_midas_demo() -> MidasTouchResult:
     result = perform_midas_touch(hosts=[], include_demo_data=True)
     print_gold_report(result)
     return result
+
+
+# =============================================================================
+# Profile Management Intelligence Integration
+# =============================================================================
+
+def analyze_profile_debt(profile_healths: list[profiles.ProfileHealth]) -> list[dict]:
+    """
+    Turn common AVD profile setup disasters into Midas-style opportunities.
+
+    This is where we call out the painful real-world mistakes that make AVD feel terrible:
+    - No FSLogix
+    - Legacy roaming profiles
+    - Profile containers on the wrong (slow/cheap) storage
+    - etc.
+    """
+    opportunities = []
+    for health in profile_healths:
+        profile_opps = profiles.generate_profile_opportunities(health)
+        for popp in profile_opps:
+            opportunities.append({
+                "host": health.host_name,
+                "type": popp["type"],
+                "grok_insight": popp["title"] + " — " + popp["impact"],
+                "recommended_action": popp["recommendation"],
+                "impact": popp["impact"],
+            })
+    return opportunities
 
 
 # =============================================================================

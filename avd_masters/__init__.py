@@ -9,7 +9,7 @@ Grok inside. Everything it touches turns to gold.
 
 from __future__ import annotations
 
-from avd_masters import alerting, catalog, cost, discovery, forecasting, governance, midas, models, optimizer, recommendations, signals, sku_discovery, types
+from avd_masters import alerting, catalog, cost, discovery, forecasting, governance, midas, models, optimizer, profiles, recommendations, signals, sku_discovery, types
 
 __version__ = "2.0.0"
 __title__ = "AVD Masters"
@@ -27,6 +27,7 @@ __all__ = [
     "sku_discovery",
     "discovery",
     "midas",
+    "profiles",
     "signals",
     "types",
     "__version__",
