@@ -159,12 +159,14 @@ def cmd_touch(apply_tags: bool = False):
             # Profile configuration analysis (one of the biggest sources of AVD pain)
             print("\nPhase 2.5: Profile Management Health Check")
             try:
-                # Simulated profile health data for demo (real version would collect via WinRM/SSH)
-                sample_profile_data = [
-                    {"name": h.name if hasattr(h, 'name') else str(h), "profile_config": {"fslogix_enabled": False, "roaming_profiles_enabled": True}}
-                    for h in (hosts[:3] if hosts else [])
+                # Demo using the new ProfileConfig structure
+                # In production: call profiles.collect_profile_config(host, winrm_session)
+                sample_configs = [
+                    profiles.ProfileConfig(fslogix_enabled=False, is_roaming_enabled=True)
+                    for _ in (hosts[:3] if hosts else [1,2,3])
                 ]
-                profile_healths = [profiles.analyze_profile_configuration(d) for d in sample_profile_data]
+                profile_healths = [profiles.analyze_profile_configuration(cfg, host_name=f"host-{i}") 
+                                   for i, cfg in enumerate(sample_configs)]
                 profile_opps = midas.analyze_profile_debt(profile_healths)
                 if profile_opps:
                     print("  ⚠️  Profile configuration issues detected (common AVD setup disasters):")

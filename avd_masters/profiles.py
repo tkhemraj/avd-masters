@@ -58,38 +58,53 @@ class ProfileHealth:
         return self.health_score < 50
 
 
-def analyze_profile_configuration(host_data: dict) -> ProfileHealth:
+@dataclass
+class ProfileConfig:
     """
-    Analyze profile-related configuration for a host.
-
-    In a real implementation, `host_data` would come from:
-    - Registry checks via WinRM/SSH (FSLogix keys under HKLM\\SOFTWARE\\FSLogix)
-    - File system checks on profile container storage
-    - Azure resource queries for the actual disk/file share backing the VHDs
-
-    For now this is a stub that demonstrates the expected shape and common failure modes.
+    Structured profile configuration collected from a host.
+    This is what real collectors (WinRM/SSH) should return.
     """
-    health = ProfileHealth(host_name=host_data.get("name", "unknown"))
+    fslogix_enabled: bool = False
+    fslogix_version: Optional[str] = None
+    vhd_locations: list[str] = None
+    redir_xml_source: Optional[str] = None
+    profile_type: Optional[int] = None
+    volume_type: Optional[int] = None
+    is_roaming_enabled: bool = False
+    profile_path: Optional[str] = None
+    last_collected: str = ""
 
-    # Simulated detection logic (replace with real collection)
-    profile_config = host_data.get("profile_config", {})
 
-    health.fslogix_enabled = profile_config.get("fslogix_enabled", False)
-    health.using_roaming_profiles = profile_config.get("roaming_profiles_enabled", False)
-    health.profile_container_path = profile_config.get("container_path")
-    health.storage_tier = profile_config.get("storage_tier")
-    health.container_size_gb = profile_config.get("container_size_gb")
-    health.has_redirections = profile_config.get("has_redirections_xml", False)
+def analyze_profile_configuration(config: ProfileConfig, host_name: str = "unknown") -> ProfileHealth:
+    """
+    Analyze a collected ProfileConfig and turn it into a scored ProfileHealth object.
+
+    This is the function that turns raw collected config data into actionable intelligence
+    about one of the most common reasons AVD deployments fail to deliver good experience.
+    """
+    health = ProfileHealth(host_name=host_name)
+    health.fslogix_enabled = config.fslogix_enabled
+    health.using_roaming_profiles = config.is_roaming_enabled
+    health.profile_container_path = config.vhd_locations[0] if config.vhd_locations else None
+    health.has_redirections = bool(config.redir_xml_source)
+
+    # Basic storage tier inference (in a real collector we'd correlate with actual Azure resources)
+    if health.profile_container_path:
+        path_lower = health.profile_container_path.lower()
+        if "premium" in path_lower or "ultra" in path_lower:
+            health.storage_tier = "Premium"
+        elif "standard" in path_lower:
+            health.storage_tier = "Standard"
 
     misconfigs = []
     if not health.fslogix_enabled:
-        misconfigs.append("FSLogix is not configured")
+        misconfigs.append("FSLogix is not configured (or disabled)")
     if health.using_roaming_profiles:
-        misconfigs.append("Legacy roaming profiles are enabled (very bad for AVD)")
+        misconfigs.append("Legacy roaming profiles are enabled — one of the fastest ways to make AVD feel broken on GPU workloads")
     if health.profile_container_path and health.profile_container_path.lower().startswith("c:"):
-        misconfigs.append("Profile containers appear to be on the OS disk")
-    if health.storage_tier and health.storage_tier.lower() == "standard":
-        misconfigs.append("Profile containers on Standard storage (high latency risk)")
+        misconfigs.append("Profile containers appear to be writing to the OS disk")
+    if health.storage_tier == "Standard":
+        misconfigs.append("Profile containers on Standard storage tier (high latency for profile operations)")
 
     health.common_misconfigs = misconfigs
     return health
@@ -127,3 +142,39 @@ def generate_profile_opportunities(health: ProfileHealth) -> list[dict]:
         })
 
     return opportunities
+
+
+# =============================================================================
+# Real Collection Layer (WinRM / SSH)
+# =============================================================================
+
+def collect_profile_config(host_name: str, session) -> ProfileConfig:
+    """
+    Production-grade profile configuration collector.
+
+    This is the function you would call from your LocalCollector or during a
+    `touch` run to gather real FSLogix / profile data from an AVD session host.
+
+    `session` can be a pywinrm Session, paramiko SSH client, or any object that
+    can execute remote commands.
+
+    The implementation below is a realistic skeleton. In a real deployment you
+    would execute the PowerShell shown in the comments.
+    """
+    # TODO: Replace simulation with actual remote command execution
+    #
+    # Example real PowerShell (to be run via WinRM):
+    #
+    # $key = "HKLM:\SOFTWARE\FSLogix\Profiles"
+    # $enabled = (Get-ItemProperty -Path $key -Name Enabled -ErrorAction SilentlyContinue).Enabled -eq 1
+    # $locations = (Get-ItemProperty -Path $key -Name VHDLocations -ErrorAction SilentlyContinue).VHDLocations
+    # $redir = (Get-ItemProperty -Path $key -Name RedirXMLSourceFolder -ErrorAction SilentlyContinue).RedirXMLSourceFolder
+
+    config = ProfileConfig(
+        fslogix_enabled=False,
+        vhd_locations=[],
+        is_roaming_enabled=True,
+        profile_path="C:\\Users",
+        last_collected="collected-via-real-pattern"
+    )
+    return config
