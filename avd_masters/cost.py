@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — FinOps / Cost Attribution Module
+AVD Masters — FinOps / Cost Attribution Module
 
 This module enables real cost calculation and auto-tagging capabilities.
 
@@ -195,15 +195,15 @@ def generate_cost_tags(
     total_cost = estimate_cost_for_samples(gpu_seconds, spec, sku, region, pricing) or 0
 
     tags = {
-        "groky:monitored": "true",
-        "groky:gpu-model": spec.model,
-        "groky:gpu-count": str(spec.gpu_count),
-        "groky:sku": sku,
-        "groky:cost-model": pricing.name,
-        "groky:cost-per-hour": f"{hourly_cost:.4f}" if hourly_cost else "unknown",
-        "groky:cost-per-second": f"{per_second:.8f}",
-        "groky:total-cost-estimate": f"{total_cost:.4f}",
-        "groky:last-calculated": datetime.utcnow().isoformat(),
+        "avd_masters:monitored": "true",
+        "avd_masters:gpu-model": spec.model,
+        "avd_masters:gpu-count": str(spec.gpu_count),
+        "avd_masters:sku": sku,
+        "avd_masters:cost-model": pricing.name,
+        "avd_masters:cost-per-hour": f"{hourly_cost:.4f}" if hourly_cost else "unknown",
+        "avd_masters:cost-per-second": f"{per_second:.8f}",
+        "avd_masters:total-cost-estimate": f"{total_cost:.4f}",
+        "avd_masters:last-calculated": datetime.utcnow().isoformat(),
     }
     return tags
 

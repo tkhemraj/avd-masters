@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Core Types
+AVD Masters — Core Types
 
 Shared primitives and type definitions used across the entire system.
 
@@ -19,7 +19,7 @@ Vendor = Literal["nvidia", "amd"]
 """GPU vendor. We are deliberately opinionated — only two that matter for AVD right now."""
 
 HostStatus = Literal["ok", "warning", "critical", "offline", "unknown"]
-"""Health state of a session host from GROKY's perspective."""
+"""Health state of a session host from AVD Masters' perspective."""
 
 ImbalanceLabel = Literal["balanced", "moderate", "severe"]
 """How bad the load distribution is across the pool."""

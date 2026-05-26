@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Governance & Policy Engine (Scaffold)
+AVD Masters — Governance & Policy Engine (Scaffold)
 
 Future capabilities:
 - Define usage policies (max util, imbalance, tagging compliance)

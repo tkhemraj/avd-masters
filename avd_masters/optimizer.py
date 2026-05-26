@@ -1,7 +1,7 @@
 """
-GROKY 2.0 — Workload Placement Optimizer (MEGA FEATURE)
+AVD Masters — Workload Placement Optimizer (MEGA FEATURE)
 
-This module will become one of GROKY's most valuable capabilities:
+This module will become one of AVD Masters' most valuable capabilities:
 
 **Intelligent Workload Placement Optimizer**
 

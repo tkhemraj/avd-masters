@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Optimization Recommendations Engine (Scaffold)
+AVD Masters — Optimization Recommendations Engine (Scaffold)
 
 This module will eventually produce high-value, dollar-impact recommendations
 such as:

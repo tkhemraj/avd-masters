@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Predictive Forecasting Engine (MEGA FEATURE)
+AVD Masters — Predictive Forecasting Engine (MEGA FEATURE)
 
 This is the foundation for one of the most powerful enterprise capabilities:
 

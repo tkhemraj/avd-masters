@@ -1,7 +1,7 @@
 """
-GROKY 2.0 — Real Alerting & Management Engine
+AVD Masters — Real Alerting & Management Engine
 
-This is the practical heart that turns GROKY from "pretty monitoring" into something that actually helps you manage your GPU shit.
+This is the practical heart that turns AVD Masters from "pretty monitoring" into something that actually helps you manage your GPU fleet.
 
 Core responsibilities:
 - Evaluate current state against rules

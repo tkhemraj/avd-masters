@@ -56,11 +56,16 @@ def scan_tenant(
     subscriptions = _get_subscriptions(credential, subscription_id)
     hosts: list[DiscoveredHost] = []
     discovered_regions: set[str] = set()
+    compute_client_for_refresh: Optional[ComputeManagementClient] = None
 
     for sub_id in subscriptions:
         try:
             avd_client = DesktopVirtualizationMgmtClient(credential, sub_id)
             compute_client = ComputeManagementClient(credential, sub_id)
+
+            # Stash a usable compute client for the later dynamic SKU refresh
+            if compute_client_for_refresh is None:
+                compute_client_for_refresh = compute_client
 
             pools = _list_host_pools(avd_client, resource_group, hostpool_name)
 
@@ -74,7 +79,6 @@ def scan_tenant(
                     if region:
                         discovered_regions.add(region)
 
-                    # For now we still use the (soon-to-be-dynamic) catalog
                     spec = catalog.lookup(vm_size) if vm_size else None
 
                     fqdn = sh["name"].split("/")[-1] if "/" in sh["name"] else sh["name"]
@@ -94,12 +98,12 @@ def scan_tenant(
         except Exception as exc:
             logger.warning("Error scanning subscription %s: %s", sub_id, exc)
 
-    # === The "cook" part: Dynamic SKU refresh for regions we actually use ===
-    if discovered_regions:
+    # === Dynamic SKU refresh using live Azure data for regions we actually use ===
+    if discovered_regions and compute_client_for_refresh:
         logger.info("Refreshing GPU catalog for regions: %s", discovered_regions)
-        catalog.refresh_from_azure(compute_client, list(discovered_regions))
+        catalog.refresh_from_azure(compute_client_for_refresh, list(discovered_regions))
 
-        # Re-resolve specs with fresh data
+        # Re-resolve specs with the now-fresh catalog data
         for host in hosts:
             if host.vm_size:
                 host.gpu_spec = catalog.lookup(host.vm_size)

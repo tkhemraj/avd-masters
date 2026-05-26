@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — GPU Catalog
+AVD Masters — GPU Catalog
 
 The single source of truth for Azure GPU-accelerated VM SKUs.
 
@@ -47,7 +47,7 @@ class GpuSpec:
     """
     Precise description of the GPU hardware delivered by a specific Azure VM SKU.
 
-    This is the atomic truth. Every other part of GROKY derives from this.
+    This is the atomic truth. Every other part of AVD Masters derives from this.
     """
 
     vendor: str                    # "nvidia" | "amd"

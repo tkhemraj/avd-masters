@@ -1,5 +1,5 @@
 """
-GROKY 2.0 — Core Data Models
+AVD Masters — Core Data Models
 
 These models are the contract between collection, analysis, storage, and the API.
 

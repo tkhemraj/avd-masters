@@ -5,6 +5,8 @@ Fetches current Azure VM SKUs (especially GPU ones) dynamically from Azure,
 scoped to the regions the customer actually has resources in.
 
 This replaces the old static catalog approach with fresh, region-aware data.
+Live data is enriched with high-fidelity model + VRAM knowledge so that
+cost calculations, tagging, and recommendations are accurate.
 """
 
 from __future__ import annotations
@@ -14,7 +16,7 @@ from typing import Optional
 
 from azure.mgmt.compute import ComputeManagementClient
 
-from avd_masters.catalog import GpuSpec, NVIDIA, AMD, CATALOG  # we'll evolve this
+from avd_masters.catalog import GpuSpec, NVIDIA, AMD
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,9 @@ def fetch_gpu_skus_for_regions(
     """
     Dynamically discover GPU-capable VM SKUs in the given regions.
 
-    Returns a dict of lowercase SKU name -> GpuSpec.
+    Returns a dict of lowercase SKU name -> high-quality GpuSpec.
+    Uses a combination of live Azure capability data + curated high-fidelity
+    GPU model profiles for accurate VRAM, generation, and vendor info.
     """
     discovered: dict[str, GpuSpec] = {}
 
@@ -40,44 +44,163 @@ def fetch_gpu_skus_for_regions(
                 if not sku.capabilities:
                     continue
 
-                # Look for GPU capabilities
-                gpu_count = None
-                gpu_manufacturer = None
-                gpu_model = None
-                vram = None
+                # Extract all interesting capabilities
+                caps = {c.name: c.value for c in sku.capabilities if c.name and c.value}
 
-                for cap in sku.capabilities:
-                    if cap.name == "GPUs":
-                        try:
-                            gpu_count = float(cap.value)
-                        except (ValueError, TypeError):
-                            continue
-                    if cap.name == "GPUModel":
-                        gpu_model = cap.value
-                    if cap.name == "GPUManufacturer":
-                        gpu_manufacturer = cap.value.lower() if cap.value else None
+                gpu_count = _parse_float(caps.get("GPUs") or caps.get("AcceleratorCount"))
+                gpu_model_raw = caps.get("GPUModel") or caps.get("AcceleratorModel")
+                gpu_manufacturer = (caps.get("GPUManufacturer") or caps.get("AcceleratorManufacturer") or "").lower()
 
-                if gpu_count and gpu_count > 0 and gpu_model:
-                    vendor = AMD if gpu_manufacturer and "amd" in gpu_manufacturer else NVIDIA
+                if not gpu_count or gpu_count <= 0 or not gpu_model_raw:
+                    continue
 
-                    # Very rough VRAM estimate — in real version we'd enrich this
-                    vram_mb = int(gpu_count * 24576) if "H100" in gpu_model or "A100" in gpu_model else int(gpu_count * 16384)
+                # Normalize model name (Azure returns things like "NVIDIA H100 80GB", "AMD MI300X" etc.)
+                model = _normalize_gpu_model(gpu_model_raw)
 
-                    spec = GpuSpec(
-                        vendor=vendor,
-                        model=gpu_model,
-                        gpu_count=gpu_count,
-                        vram_mb=vram_mb,
-                        generation=_guess_generation(gpu_model),
-                    )
+                vendor = AMD if "amd" in gpu_manufacturer or "mi" in model.lower() else NVIDIA
 
-                    discovered[sku.name.lower()] = spec
+                # High-fidelity VRAM lookup (preferred over crude multiplication)
+                vram_mb = _resolve_vram_mb(model, gpu_count, caps)
+
+                spec = GpuSpec(
+                    vendor=vendor,
+                    model=model,
+                    gpu_count=gpu_count,
+                    vram_mb=vram_mb,
+                    generation=_guess_generation(model),
+                    notes=_build_notes(model, caps),
+                )
+
+                discovered[sku.name.lower()] = spec
 
         except Exception as exc:
             logger.warning("Failed to fetch SKUs for region %s: %s", region, exc)
 
     logger.info("Dynamically discovered %d GPU SKUs across %d regions", len(discovered), len(regions))
     return discovered
+
+
+# =============================================================================
+# High-fidelity GPU profile data (accurate as of 2026)
+# =============================================================================
+
+# Base VRAM in MB for full physical GPUs (used when Azure doesn't expose exact memory)
+_KNOWN_GPU_VRAM_MB: dict[str, int] = {
+    # NVIDIA Hopper family (2023-2026)
+    "h100": 81920,          # 80 GB standard (most common)
+    "h100 94gb": 96256,
+    "h100 96gb": 98304,
+    "h200": 144384,         # ~141 GiB HBM3e
+    # Ampere
+    "a100": 81920,
+    "a100 40gb": 40960,
+    # Ada Lovelace
+    "l40s": 49152,          # 48 GB
+    "l40": 49152,
+    "a10": 24576,           # 24 GB
+    "rtx 6000": 49152,
+    # Blackwell (emerging)
+    "b200": 188416,
+    "gb200": 192000,
+    # AMD CDNA3 / RDNA
+    "mi300x": 1572864,      # 192 GB HBM3 (CDNA3)
+    "v620": 32768,
+    "v710": 24576,
+    "radeon pro v620": 32768,
+    "radeon pro v710": 24576,
+}
+
+# Common aliases Azure might use
+_MODEL_ALIASES = {
+    "nvidia h100": "H100",
+    "nvidia h200": "H200",
+    "nvidia a100": "A100",
+    "nvidia l40s": "L40S",
+    "nvidia a10": "A10",
+    "amd mi300x": "MI300X",
+    "amd radeon pro v620": "Radeon PRO V620",
+}
+
+
+def _normalize_gpu_model(raw: str) -> str:
+    raw = raw.strip()
+    lower = raw.lower()
+
+    for alias, canonical in _MODEL_ALIASES.items():
+        if alias in lower:
+            return canonical
+
+    # Strip common prefixes
+    for prefix in ("nvidia ", "amd ", "tesla ", "accelerator "):
+        if lower.startswith(prefix):
+            raw = raw[len(prefix):].strip()
+            lower = raw.lower()
+
+    # Title case nicely
+    return raw.upper() if raw.islower() else raw
+
+
+def _resolve_vram_mb(model: str, gpu_count: float, caps: dict[str, str]) -> int:
+    """Best-effort accurate VRAM. Prefer explicit fields, then known profiles."""
+    model_lower = model.lower()
+
+    # 1. Look for explicit memory capability from Azure if present
+    for key in ("AcceleratorMemoryInMB", "GPUMemoryMB", "AcceleratorMemoryMB", "MemoryMB"):
+        if key in caps:
+            try:
+                mem = int(float(caps[key]))
+                if mem > 1024:  # ignore nonsense small values
+                    return int(mem * gpu_count)
+            except (ValueError, TypeError):
+                pass
+
+    # 2. High-fidelity static profile lookup
+    for key, vram in _KNOWN_GPU_VRAM_MB.items():
+        if key in model_lower:
+            return int(vram * gpu_count)
+
+    # 3. Fallback heuristics (better than before but still estimate)
+    if "h100" in model_lower or "h200" in model_lower:
+        base = 96256 if "94" in model_lower or "96" in model_lower else 81920
+        return int(base * gpu_count)
+    if "a100" in model_lower:
+        return int(81920 * gpu_count)
+    if "l40" in model_lower:
+        return int(49152 * gpu_count)
+    if "a10" in model_lower:
+        return int(24576 * gpu_count)
+    if "mi300" in model_lower:
+        return int(1572864 * gpu_count)
+
+    # Last resort generic
+    return int(gpu_count * 16384)
+
+
+def _build_notes(model: str, caps: dict[str, str]) -> str:
+    """Attach useful context discovered at runtime."""
+    notes = []
+    if "vCPUs" in caps:
+        notes.append(f"{caps['vCPUs']} vCPU")
+    if "MemoryGB" in caps:
+        notes.append(f"{caps['MemoryGB']} GB RAM")
+
+    # Flag interesting variants
+    m = model.lower()
+    if "h100" in m and ("94" in m or "96" in m):
+        notes.append("High-memory variant")
+    if caps.get("GPUs") and float(caps.get("GPUs", 0)) >= 4:
+        notes.append("Dense node")
+
+    return " • ".join(notes) if notes else ""
+
+
+def _parse_float(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 
 def _guess_generation(model: str) -> str:
@@ -93,22 +216,3 @@ def _guess_generation(model: str) -> str:
     return ""
 
 
-def refresh_catalog(
-    compute_client: Optional[ComputeManagementClient] = None,
-    regions: Optional[list[str]] = None,
-) -> None:
-    """
-    Refreshes the in-memory catalog with live data from Azure.
-
-    If compute_client and regions are provided, it will do a live fetch.
-    Otherwise it falls back to the static catalog.
-    """
-    global CATALOG
-
-    if compute_client and regions:
-        live_skus = fetch_gpu_skus_for_regions(compute_client, regions)
-        if live_skus:
-            CATALOG.update({k: v for k, v in live_skus.items()})
-            logger.info("Catalog refreshed with live Azure SKU data")
-    else:
-        logger.info("Using static catalog (no Azure client provided for dynamic lookup)")
