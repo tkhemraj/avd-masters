@@ -1,26 +1,15 @@
 # AVD Masters
 
-**The enterprise GPU management and intelligence platform for Azure Virtual Desktop.**
+**The intelligence platform for organizations that can no longer afford to guess about their GPU infrastructure.**
 
-AVD Masters delivers direct hardware truth, actionable intelligence, and professional governance for organizations running high-value GPU workloads on Azure Virtual Desktop — without the cost and limitations of traditional monitoring approaches.
+Most teams running serious GPU workloads on Azure Virtual Desktop know they’re spending heavily. What they don’t know — with any real precision — is whether that spend is justified, where the waste is hiding, or how exposed they are from a governance and compliance standpoint.
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/badge/GitHub-tkhemraj/avd-masters-black?style=flat&logo=github)](https://github.com/tkhemraj/avd-masters)
-[![Status](https://img.shields.io/badge/status-active%20development-orange)](https://github.com/tkhemraj/avd-masters)
+Traditional tools either charge you a premium to move your data into Azure Monitor, or they give you dashboards that look sophisticated but leave you with the same hard questions you started with:  
+*Is this hardware actually earning its keep?*  
+*Which workloads are quietly burning money?*  
+*If an auditor walked in tomorrow, how would we prove we’re in control of this environment?*
 
----
-
-## The Challenge
-
-Organizations running GPU-accelerated AVD workloads face a consistent set of problems:
-
-- **High cost of traditional monitoring** — Heavy dependence on Azure Monitor and Log Analytics creates significant ongoing expense.
-- **Inaccurate data on fractional GPUs** — Most tools fail to properly account for vGPU partitioning (1/6, 1/3, 1/2, etc.).
-- **Lack of actionable insight** — Dashboards show metrics, but rarely deliver clear, prioritized recommendations with quantified business impact.
-- **Governance and compliance pressure** — Especially for organizations subject to CMMC 2.0, NIST 800-171, or other regulated environments.
-
-AVD Masters was built to solve these problems with a direct, intelligence-first approach.
+AVD Masters exists for organizations that have moved past hoping the numbers look fine. It gives you direct truth from the hardware, turns that truth into clear, quantified intelligence, and produces the kind of governance artifacts that actually hold up when scrutiny arrives.
 
 ---
 
@@ -39,41 +28,38 @@ AVD Masters was built to solve these problems with a direct, intelligence-first 
 
 ---
 
-## Signature Experiences
+## The Signature Experiences
 
-### `midas`
-Pure intelligence. Run `python run.py midas` to receive a high-signal report showing current spend, recoverable savings opportunities, and prioritized actions — written in clear, direct language.
+### The Midas Report
 
-### `touch`
-The full orchestrated experience. `python run.py touch` performs discovery, runs Midas analysis, overlays governance and CMMC 2.0 alignment, prepares rich Azure tags, and generates remediation playbooks.
+Run `python run.py midas` and you don’t get another dashboard full of charts that still require interpretation. You get something rarer: a clear, unvarnished assessment of where your money is going and exactly how much of it is recoverable.
 
-When configured, `touch` can also send targeted email notifications when material issues are detected.
+The Midas engine looks at your actual GPU SKUs, their real capabilities, current spend rates, and opportunities for right-sizing, consolidation, and retirement. It then translates that analysis into plain language with specific dollar figures attached — not vague “potential savings” ranges, but concrete monthly and annualized numbers tied to specific hosts and workloads.
+
+This is the report you forward to finance. This is the document that makes the case for change without requiring three follow-up meetings to explain what the data actually means.
+
+### The Touch Command
+
+`python run.py touch` is where the platform shows what it was built for.
+
+In a single, orchestrated run it will:
+
+- Discover your actual AVD GPU estate across subscriptions
+- Refresh its understanding of available SKUs directly from Azure
+- Run deep Midas analysis on cost, utilization patterns, and optimization potential
+- Overlay governance and CMMC 2.0 alignment scoring
+- Prepare rich, ready-to-apply Azure tags that carry real financial and operational context
+- Generate prioritized remediation playbooks you can actually act on
+
+When email alerting is configured, it will also notify the right people the moment material issues appear — expensive hardware sitting idle, significant projected overruns, or governance gaps that need attention before they become audit findings.
+
+This is not a monitoring tool that happens to have some reports. This is an operational system that can tell you, with unusual clarity, what is happening with the most expensive resources in your environment — and what you should do about it.
 
 ---
 
 ## Getting Started
 
-```bash
-git clone https://github.com/tkhemraj/avd-masters.git
-cd avd-masters
-
-pip install -r requirements.txt
-cp .env.example .env
-
-# Configure Azure credentials and (optionally) WinRM/SSH access for direct collection
-python run.py
-```
-
-### Recommended Commands
-
-```bash
-python run.py midas                    # Intelligence report with quantified opportunities
-python run.py touch                    # Full discovery + analysis + governance + playbooks
-python run.py touch --apply-tags       # Same as above, with tag application (use with care)
-python run.py discover                 # Focused discovery and live SKU refresh
-```
-
-For production use, review `governance.py` for CMMC configuration guidance and `alerting.py` for email notification setup.
+Getting started is deliberately straightforward.
 
 ```bash
 git clone https://github.com/tkhemraj/avd-masters.git
@@ -81,12 +67,16 @@ cd avd-masters
 
 pip install -r requirements.txt
 cp .env.example .env
-# Configure your Azure + WinRM/SSH access
-
-python run.py
 ```
 
-Then open **http://localhost:8080**
+From there, the two commands that matter most are:
+
+- `python run.py midas` — for immediate intelligence on spend and opportunity.
+- `python run.py touch` — for the complete operational workflow, including discovery, analysis, tagging, and governance reporting.
+
+For organizations that need email notifications when material issues arise, the alerting layer can be enabled through a small set of environment variables. Full details are in the project documentation.
+
+Production deployments typically start with read-only discovery and analysis before enabling any write operations such as tag application.
 
 ---
 
@@ -101,38 +91,29 @@ python run.py forecast        # Predictive cost forecasting demo
 
 ---
 
-## Enterprise Governance
+## Built for Environments Where Governance Actually Matters
 
-AVD Masters includes first-class support for organizations operating under regulatory requirements:
+Many of the organizations running the largest and most sensitive AVD GPU deployments do not have the luxury of treating infrastructure as a purely technical concern. They operate under contractual, regulatory, or national security requirements that demand demonstrable control.
 
-- **Fleet Health Scoring** — A single, meaningful metric for leadership visibility.
-- **Cross-Subscription Rollups** — Governance views across complex Azure estates.
-- **CMMC 2.0 Alignment** — Explicit mapping to relevant NIST 800-171 / CMMC 2.0 domains (AC, AU, CM, IR, PM, RA, SI), with honest coverage assessment and evidence generation suitable for audits.
+AVD Masters was designed with that reality in mind.
 
-See `governance.py` for the detailed rationale and control mappings.
+The governance layer produces more than internal health scores. It generates structured visibility and evidence across the areas that matter most in regulated environments — particularly those aligned with CMMC 2.0 and the underlying NIST SP 800-171 controls. This includes configuration integrity, access and accountability through tagging, risk quantification, and program-level oversight across complex Azure estates.
 
----
+The goal is not to turn a management tool into a compliance product. The goal is to ensure that the same system you use to understand and optimize your GPU spend can also produce the kind of artifacts that hold up when external parties ask hard questions.
 
-## Philosophy
-
-- **Direct over sampled** — We collect truth from the hardware itself.
-- **Actionable over decorative** — Every output is designed to drive a decision.
-- **Cost-efficient by default** — No forced reliance on expensive Azure data services.
-- **Enterprise-grade governance** — Built with FinOps, risk management, and regulated environments in mind.
-- **Professional by design** — Clear documentation, predictable behavior, and output suitable for technical and business stakeholders.
+This matters. In environments where GPU infrastructure is both extremely expensive and tightly governed, the ability to speak with precision about cost, risk, and control in the same conversation is a genuine operational advantage.
 
 ---
 
-## Current Focus
+## A Different Kind of Tool
 
-AVD Masters is under active development with emphasis on:
+AVD Masters is not trying to be another monitoring platform with better charts.
 
-- High-fidelity intelligence (Midas) that consistently surfaces material savings and risk
-- Production-grade signals collection patterns
-- Deep enterprise governance, including CMMC 2.0 support
-- One-command operational experiences (`touch`)
+It is an attempt to build something more useful: a system that respects both the enormous cost of modern GPU infrastructure and the very real governance requirements that come with running it at scale.
 
-The project is designed for teams that manage expensive GPU infrastructure and need both operational excellence and defensible governance artifacts.
+The organizations that get the most value from it tend to share a few characteristics. They know their GPU workloads are expensive. They are no longer satisfied with hoping the spend is reasonable. And they operate in environments where “we think we’re in control” is not an acceptable answer when difficult questions are asked.
+
+If that describes your situation, this platform was built with you in mind.
 
 ---
 
@@ -142,4 +123,4 @@ MIT License
 
 ---
 
-**Built for organizations that need to understand exactly what is happening with their GPUs — and what to do about it.**
+**For teams that have decided it is finally time to understand what their GPUs are actually doing — and what they should be doing instead.**
