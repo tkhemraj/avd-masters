@@ -104,6 +104,9 @@ The first collection happens immediately.
 **Prefer to see it first?**  
 → **[Open the premium interactive demo →](docs/index.html)** (beautiful, no install required)
 
+**See real cost attribution in action:**  
+→ `python examples/finops_demo.py` (generates live cost-per-second + Azure tags + showback report)
+
 ---
 
 ## Current State
