@@ -83,6 +83,8 @@ A beautiful, graphical deep dive into the accuracy model.
 
 **Architecture & Concepts:** See [docs/architecture.md](docs/architecture.md) for the full system design and extension guidance.
 
+**For Consultants & Operators:** See [docs/consulting-positioning.md](docs/consulting-positioning.md) for personal positioning, signature offerings, and messaging assets built around AVD Masters as a competitive advantage.
+
 ---
 
 ### Useful Commands
