@@ -7,8 +7,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/badge/GitHub-tkhemraj/groky-black?style=flat&logo=github)](https://github.com/tkhemraj/groky)
-[![Status](https://img.shields.io/badge/status-active%20development-orange)](https://github.com/tkhemraj/groky)
+[![GitHub](https://img.shields.io/badge/GitHub-tkhemraj/avd-masters-black?style=flat&logo=github)](https://github.com/tkhemraj/avd-masters)
+[![Status](https://img.shields.io/badge/status-active%20development-orange)](https://github.com/tkhemraj/avd-masters)
 
 ---
 
@@ -61,8 +61,8 @@ Ready-to-apply Azure tags and prioritized savings opportunities.
 ## Quick Start
 
 ```bash
-git clone https://github.com/tkhemraj/groky.git
-cd groky
+git clone https://github.com/tkhemraj/avd-masters.git
+cd avd-masters
 
 pip install -r requirements.txt
 cp .env.example .env

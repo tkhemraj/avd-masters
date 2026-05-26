@@ -15,8 +15,8 @@ This guide will get you running quickly with the right mindset.
 ## Installation
 
 ```bash
-git clone https://github.com/tkhemraj/groky.git
-cd groky
+git clone https://github.com/tkhemraj/avd-masters.git
+cd avd-masters
 
 pip install -r requirements.txt
 ```
