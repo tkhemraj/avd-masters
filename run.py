@@ -226,6 +226,50 @@ def cmd_touch(apply_tags: bool = False):
     print("═" * 72 + "\n")
 
 
+def cmd_profiles(storage_account: str = None, share: str = None):
+    """Dedicated profile & FSLogix analysis command."""
+    from avd_masters import profiles, toolkit
+
+    print("\n" + "═" * 72)
+    print("║" + " AVD MASTERS — PROFILE & FSLOGIX ANALYSIS ".center(70) + "║")
+    print("═" * 72 + "\n")
+
+    if storage_account and share:
+        print(f"Analyzing Azure-side profile storage: {storage_account}/{share}")
+        analysis = toolkit.analyze_profile_storage(storage_account, share, None, "current-sub")
+        recs = toolkit.generate_profile_storage_recommendations(analysis)
+        print(f"  Performance Tier: {analysis.performance_tier}")
+        print(f"  Estimated VHDs: {analysis.estimated_vhd_count}")
+        if analysis.red_flags:
+            print("  Red Flags:")
+            for flag in analysis.red_flags:
+                print(f"    - {flag}")
+        if recs:
+            print("\n  Recommendations:")
+            for r in recs:
+                print(f"    → {r}")
+    else:
+        print("Running host-level profile configuration analysis (demo data).")
+        print("In production this would collect via direct methods or the profiles collector.\n")
+
+        # Demo bad setups
+        bad_configs = [
+            profiles.ProfileConfig(fslogix_enabled=False, is_roaming_enabled=True),
+            profiles.ProfileConfig(fslogix_enabled=True, vhd_locations=["https://badstorage.file.core.windows.net/profiles"], is_roaming_enabled=False),
+        ]
+        for cfg in bad_configs:
+            health = profiles.analyze_profile_configuration(cfg, "example-host")
+            print(f"  {health.host_name} → Health: {health.health_score}/100")
+            if health.common_misconfigs:
+                for m in health.common_misconfigs:
+                    print(f"    • {m}")
+
+    print("\n" + "═" * 72)
+    print("  Bad profile setups are one of the top reasons AVD feels terrible.")
+    print("  This command exists to make those problems visible and fixable.")
+    print("═" * 72 + "\n")
+
+
 def cmd_discover():
     """Real discovery + dynamic SKU refresh + auto-tagging demo."""
     from avd_masters import discovery
@@ -269,6 +313,10 @@ def main():
     touch_parser = subparsers.add_parser("touch", help="ONE COMMAND: Full discovery + Midas analysis + rich tagging + remediation playbooks")
     touch_parser.add_argument("--apply-tags", action="store_true", help="Actually apply the generated tags (DANGEROUS - dry-run is default)")
 
+    profiles_parser = subparsers.add_parser("profiles", help="Profile & FSLogix configuration analysis and recommendations (the thing that usually destroys AVD)")
+    profiles_parser.add_argument("--storage-account", help="Analyze Azure-side profile storage (no host execution needed)")
+    profiles_parser.add_argument("--share", help="Share or container name")
+
     args = parser.parse_args()
 
     if args.command == "alerts":
@@ -283,6 +331,11 @@ def main():
         cmd_midas()
     elif args.command == "touch":
         cmd_touch(apply_tags=getattr(args, "apply_tags", False))
+    elif args.command == "profiles":
+        cmd_profiles(
+            storage_account=getattr(args, "storage_account", None),
+            share=getattr(args, "share", None)
+        )
     else:
         cmd_status()
 
