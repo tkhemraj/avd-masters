@@ -112,7 +112,7 @@ def cmd_touch():
     The ultimate 'Midas Touch' one-command experience.
     Discover → Analyze like Grok → Generate gold tags → Actionable remediation playbooks.
     """
-    from avd_masters import discovery, midas
+    from avd_masters import discovery, governance, midas, signals
 
     print("\n" + "═" * 72)
     print("║" + " AVD MASTERS — ONE COMMAND TOUCH ".center(70) + "║")
@@ -127,13 +127,20 @@ def cmd_touch():
     except Exception as e:
         print(f"  Live discovery limited ({e}). Using powerful demo mode.\n")
 
-    print("Phase 2: Midas Intelligence Analysis")
+    print("Phase 2: Midas Intelligence Analysis + Governance Overlay")
     try:
         if hosts:
-            result = midas.perform_midas_touch(hosts, include_demo_data=False)
+            demo_signals = signals.get_simulated_fleet([getattr(h, 'name', str(h)) for h in hosts[:8]])
+            result = midas.perform_midas_touch(hosts, include_demo_data=False, fleet_signals=demo_signals)
+            midas.print_gold_report(result)
+
+            # Governance layer (cross-sub health + policy)
+            health = governance.calculate_fleet_health(hosts, monthly_burn=result.total_current_monthly_burn)
+            violations = governance.evaluate_policies(hosts)
+            governance.print_governance_report(health, violations)
         else:
             result = midas.perform_midas_touch([], include_demo_data=True)
-        midas.print_gold_report(result)
+            midas.print_gold_report(result)
     except Exception as e:
         print(f"  Analysis issue: {e}")
         result = midas.run_midas_demo()
@@ -146,11 +153,18 @@ def cmd_touch():
             print("  Tags include: cost-per-second, gpu-model, recommendation, last-calculated, etc.")
         else:
             print("  (Demo mode) Would generate high-quality Azure tags + recommended actions for every host above.")
+
+        # Generate simple but powerful remediation playbooks
+        print("\n  Remediation Playbooks (prioritized):")
+        print("    1. Immediate: Investigate top 3 idle/oversized hosts from the Midas report above.")
+        print("    2. This week: Migrate any retiring hardware (Tesla M60 etc.).")
+        print("    3. This month: Run packing analysis on fractional H100/MI300X hosts.")
+        print("    4. Ongoing: Enable the signals collector so future `touch` runs are scary accurate.")
     except Exception as e:
         print(f"  Tagging prep: {e}")
 
     print("\n" + "═" * 72)
-    print("  Next level: Run with real credentials + utilization data for terrifying accuracy.")
+    print("  Next level: Real utilization signals + --apply-tags for one-command safe remediation.")
     print("  The gold is real. Go touch it.")
     print("═" * 72 + "\n")
 

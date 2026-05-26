@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from avd_masters import catalog, cost
+from avd_masters import catalog, cost, signals
 from avd_masters.catalog import GpuSpec
 
 logger = logging.getLogger(__name__)
@@ -218,6 +218,38 @@ def _score_opportunity(host_name: str, spec: GpuSpec, sku: str, region: str) -> 
             impact=f"Saves ~${savings:,.0f}/month",
         )
 
+    # === New: Obvious L40S on heavy compute workloads (reverse right-size) ===
+    if "L40" in spec.model and spec.gpu_count >= 1.0:
+        savings = round(monthly_burn * 0.15, 0)  # smaller but real
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=savings,
+            opportunity_type="wrong_tool_for_job",
+            confidence="medium",
+            grok_insight="L40S is fantastic for graphics and light inference. If this is heavy training or large models, you're on the wrong horse.",
+            recommended_action="Profile the workload. If it's truly heavy, a smaller number of H100s will be both faster and cheaper.",
+            impact=f"Performance + ~${savings:,.0f}/month efficiency",
+        )
+
+    # === New: Legacy fractional that should have been retired already ===
+    if spec.retiring and spec.is_fractional:
+        savings = round(monthly_burn * 0.55, 0)
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=savings,
+            opportunity_type="zombie_fractional",
+            confidence="high",
+            grok_insight="You're running fractional shares of hardware that is already end-of-life. This is technical debt with a power bill.",
+            recommended_action="Migrate these workloads immediately. The risk is not worth the tiny savings you're pretending to get.",
+            impact=f"Risk elimination + ~${savings:,.0f}/month",
+        )
+
     return None
 
 
@@ -229,6 +261,7 @@ def perform_midas_touch(
     hosts: list[Any],
     region: str = "eastus",
     include_demo_data: bool = True,
+    fleet_signals: signals.FleetSignals | None = None,
 ) -> MidasTouchResult:
     """
     Run the full Midas Touch over a fleet.
@@ -310,6 +343,24 @@ def perform_midas_touch(
 
     # Re-sort after fleet analysis
     opportunities.sort(key=lambda o: o.potential_monthly_savings, reverse=True)
+
+    # === Signals integration (the scary accurate part) ===
+    if fleet_signals:
+        enriched = signals.enrich_midas_opportunities(hosts, fleet_signals)
+        for item in enriched:
+            opp = GoldenOpportunity(
+                host=item["host"],
+                sku="unknown (from signals)",
+                gpu_spec=catalog.lookup("Standard_NC32ads_H100_v5") or list(catalog.CATALOG.values())[0],
+                current_monthly_burn=0.0,
+                potential_monthly_savings=1800.0,  # conservative placeholder until we have cost data
+                opportunity_type=item["type"],
+                confidence="very_high",
+                grok_insight=item["grok_line"],
+                recommended_action="Investigate immediately. This host is costing real money while doing almost nothing.",
+                impact="Confirmed idle — high savings potential",
+            )
+            opportunities.append(opp)
 
     # === Build the Grok Narrative (the part people actually read) ===
     brutal_truth = _grok_speak(

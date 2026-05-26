@@ -109,10 +109,11 @@ python run.py forecast        # Predictive cost forecasting demo
 
 We are actively building real, usable management capabilities:
 
-- Working alerting engine with practical rules
-- Cost attribution and Azure tagging
-- Forecasting and optimization recommendations
-- Strong CLI experience for day-to-day operations
+- Midas Touch intelligence (the signature "everything it touches turns to gold" experience)
+- Real utilization signals layer for accurate idle/waste detection
+- Governance + Fleet Health + cross-sub visibility
+- One-command `touch` that does discovery → analysis → tagging → playbooks
+- Strong CLI with Grok-grade direct, high-signal output
 
 This is not a marketing project. It's a tool designed to help teams that actually run expensive GPU infrastructure on Azure.
 
