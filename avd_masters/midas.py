@@ -21,6 +21,7 @@ from typing import Any, Optional
 
 from avd_masters import alerting, catalog, cost, signals
 from avd_masters.catalog import GpuSpec
+from avd_masters.signals import FleetSignals, HostSignal
 
 logger = logging.getLogger(__name__)
 
@@ -393,6 +394,37 @@ def perform_midas_touch(
                 impact="Confirmed idle — high savings potential",
             )
             opportunities.append(opp)
+
+        # New: Experience debt on expensive hardware is the worst kind of waste
+        for sig in fleet_signals.signals:
+            if sig.has_poor_experience and sig.avg_frame_time_ms:
+                # Find matching host cost if possible
+                monthly_burn = 1200  # fallback
+                for h in hosts:
+                    if getattr(h, "name", None) == sig.host_name:
+                        spec = getattr(h, "gpu_spec", None)
+                        sku = getattr(h, "vm_size", None)
+                        if spec and sku:
+                            monthly_burn = _calculate_monthly_burn(spec, sku, region) or 1200
+                        break
+
+                opp = GoldenOpportunity(
+                    host=sig.host_name,
+                    sku="from signals",
+                    gpu_spec=catalog.lookup("Standard_NC32ads_H100_v5") or list(catalog.CATALOG.values())[0],
+                    current_monthly_burn=monthly_burn,
+                    potential_monthly_savings=round(monthly_burn * 0.4, 0),
+                    opportunity_type="bad_experience_on_expensive_hardware",
+                    confidence="high",
+                    grok_insight=(
+                        f"This host is delivering poor user experience (P95 frame time ~{sig.p95_frame_time_ms}ms, "
+                        f"input lag ~{sig.input_latency_ms}ms) on expensive hardware. "
+                        "This is the most painful form of waste — users are unhappy and the company is overpaying."
+                    ),
+                    recommended_action="Profile encoding, network path, and workload. Consider right-sizing or moving to more appropriate SKUs.",
+                    impact=f"Bad experience on hardware costing ~${monthly_burn:,.0f}/month",
+                )
+                opportunities.append(opp)
 
     # === Build the Grok Narrative (the part people actually read) ===
     brutal_truth = _grok_speak(

@@ -232,6 +232,44 @@ def rule_forecast_overrun(context: dict) -> Alert | None:
 
 
 # =============================================================================
+# Latency & User Experience Rules (making AVD actually feel good)
+# =============================================================================
+
+def rule_high_latency(context: dict) -> Alert | None:
+    """Fire when user experience is suffering (high frame times or input lag)."""
+    p95_frame = context.get("p95_frame_time_ms")
+    input_latency = context.get("input_latency_ms")
+
+    if p95_frame and p95_frame > 50:
+        return Alert(
+            id=f"high-frame-latency-{context.get('host_name', 'unknown')}",
+            severity=Severity.CRITICAL,
+            title="Poor Frame Rendering Latency",
+            description=f"P95 frame time at {p95_frame}ms — users will feel stutter and jank.",
+            resource=context.get("host_name", "unknown"),
+            metric="p95_frame_time_ms",
+            value=p95_frame,
+            threshold=50,
+            impact="Direct degradation of user experience on expensive GPU hardware",
+            recommendation="Investigate GPU load, driver, encoding settings, or right-size the workload.",
+        )
+    if input_latency and input_latency > 100:
+        return Alert(
+            id=f"high-input-latency-{context.get('host_name', 'unknown')}",
+            severity=Severity.WARNING,
+            title="High Input-to-Photon Latency",
+            description=f"End-to-end input latency around {input_latency}ms.",
+            resource=context.get("host_name", "unknown"),
+            metric="input_latency_ms",
+            value=input_latency,
+            threshold=100,
+            impact="Users feel the system is 'laggy' even if GPU util looks fine",
+            recommendation="Check network path, AVD protocol settings, and encoding pipeline.",
+        )
+    return None
+
+
+# =============================================================================
 # Default Engine Factory
 # =============================================================================
 
@@ -242,6 +280,7 @@ def create_default_alert_engine() -> AlertEngine:
     engine.add_rule(rule_high_cost_burn)
     engine.add_rule(rule_severe_imbalance)
     engine.add_rule(rule_forecast_overrun)
+    engine.add_rule(rule_high_latency)  # New: because expensive GPUs that feel bad are the worst kind of waste
     return engine
 
 

@@ -24,12 +24,27 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class HostSignal:
-    """A single point-in-time or aggregated signal for one session host."""
+    """
+    A single point-in-time or aggregated signal for one session host.
+
+    This is the core data model for everything that matters:
+    - Utilization (cost & waste)
+    - Performance / Latency (user experience)
+    - Health signals
+    """
     host_name: str
     gpu_util_avg: float          # 0-100
     gpu_util_peak: float | None = None
     memory_util_avg: float | None = None
     gpu_seconds_in_window: float = 0.0
+
+    # === Performance & Latency (the new frontier for AVD GPU excellence) ===
+    avg_frame_time_ms: float | None = None          # Average GPU frame render time
+    p95_frame_time_ms: float | None = None          # 95th percentile — critical for "jank"
+    input_latency_ms: float | None = None           # End-to-end input to photon (ideal < 50-80ms for good feel)
+    network_latency_ms: float | None = None         # Protocol / RTT latency (huge for remote graphics)
+    encoding_latency_ms: float | None = None        # GPU encoding time if using video encoding
+
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     source: str = "unknown"      # "nvidia-smi", "winrm", "simulated", "azure-metrics", etc.
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -43,6 +58,15 @@ class HostSignal:
     def is_underutilized(self) -> bool:
         """Heuristic: wasting expensive hardware."""
         return self.gpu_util_avg < 35.0
+
+    @property
+    def has_poor_experience(self) -> bool:
+        """Heuristic for bad user experience (high frame time or input lag)."""
+        if self.p95_frame_time_ms and self.p95_frame_time_ms > 33:  # ~30fps feels bad
+            return True
+        if self.input_latency_ms and self.input_latency_ms > 80:
+            return True
+        return False
 
 
 @dataclass
@@ -66,13 +90,25 @@ class FleetSignals:
             return 0.0
         return round(sum(s.gpu_util_avg for s in self.signals) / len(self.signals), 1)
 
+    @property
+    def poor_experience_count(self) -> int:
+        return sum(1 for s in self.signals if s.has_poor_experience)
+
     def get_waste_score(self) -> float:
         """0-100 score where higher = more obvious waste happening right now."""
         if not self.signals:
             return 0.0
         idle_ratio = self.idle_count / len(self.signals)
         under_ratio = self.underutilized_count / len(self.signals)
-        return round((idle_ratio * 60 + under_ratio * 40), 1)
+        experience_penalty = (self.poor_experience_count / len(self.signals)) * 30
+        return round((idle_ratio * 50 + under_ratio * 30 + experience_penalty), 1)
+
+    def get_experience_score(self) -> float:
+        """0-100 user experience health score for the fleet (higher is better)."""
+        if not self.signals:
+            return 100.0
+        bad_ratio = self.poor_experience_count / len(self.signals)
+        return round((1 - bad_ratio) * 100, 1)
 
 
 # =============================================================================
@@ -139,14 +175,21 @@ class LocalCollector(SignalCollector):
             else:
                 util = 31.0 + ((i * 11) % 48)
 
+            # Simulate realistic latency patterns alongside utilization
+            frame_time = 16 + (i % 5) * 8 if util < 70 else 45 + (i % 7) * 10
+            input_lag = 35 + (i % 4) * 15
+
             signals.append(HostSignal(
                 host_name=name,
                 gpu_util_avg=round(util, 1),
                 gpu_util_peak=round(min(100, util * 1.4), 1),
+                avg_frame_time_ms=round(frame_time, 1),
+                p95_frame_time_ms=round(frame_time * 1.6, 1),
+                input_latency_ms=round(input_lag, 1),
                 source=self.name,
                 metadata={
-                    "collector_version": "0.2-local",
-                    "note": "Replace with real nvidia-smi / rocm-smi via WinRM or SSH"
+                    "collector_version": "0.3-local",
+                    "note": "Replace with real collection: nvidia-smi + custom latency probes via WinRM/SSH"
                 },
             ))
         return signals
@@ -174,6 +217,9 @@ def analyze_for_midas(fleet: FleetSignals) -> dict[str, Any]:
         "summary": "",
     }
 
+    experience_score = fleet.get_experience_score()
+    bad_experience = fleet.poor_experience_count
+
     if waste_score > 60:
         insights["summary"] = (
             f"This fleet is bleeding money (waste score {waste_score}). "
@@ -188,6 +234,12 @@ def analyze_for_midas(fleet: FleetSignals) -> dict[str, Any]:
         insights["summary"] = (
             f"Fleet utilization is acceptable ({fleet.avg_util}% avg). "
             "Still run Midas — there are almost always right-sizing and packing opportunities hiding in the noise."
+        )
+
+    if bad_experience > 0:
+        insights["summary"] += (
+            f" Additionally, {bad_experience} hosts are delivering poor user experience "
+            f"(experience score: {experience_score}). Expensive hardware that feels bad is the most painful kind of waste."
         )
 
     return insights

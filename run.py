@@ -48,10 +48,11 @@ def cmd_status():
     print()
 
     print("Recommended starting points:")
-    print("  python run.py midas          # Intelligence and savings analysis")
+    print("  python run.py midas          # Intelligence (cost + user experience + savings)")
     print("  python run.py touch          # Complete operational workflow")
     print("  python run.py touch --apply-tags")
     print("\nAdditional commands: discover | alerts | cost | forecast\n")
+    print("Now with serious latency & user experience monitoring feeding the intelligence engine.")
 
 
 def cmd_alerts(email: bool = False):
