@@ -8,7 +8,7 @@ Direct hardware truth. Real alerts. Actionable intelligence.
 
 from __future__ import annotations
 
-from avd_masters import alerting, catalog, cost, forecasting, governance, models, optimizer, recommendations, sku_discovery, types
+from avd_masters import alerting, catalog, cost, discovery, forecasting, governance, models, optimizer, recommendations, sku_discovery, types
 
 __version__ = "2.0.0"
 __title__ = "AVD Masters"
@@ -24,6 +24,7 @@ __all__ = [
     "optimizer",
     "recommendations",
     "sku_discovery",
+    "discovery",
     "types",
     "__version__",
 ]

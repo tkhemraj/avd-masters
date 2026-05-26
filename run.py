@@ -8,6 +8,7 @@ Usage examples:
     python run.py alerts             # Run the management demo with alerts
     python run.py cost               # Show cost attribution demo
     python run.py forecast           # Show forecasting
+    python run.py discover           # Real discovery + live SKU refresh + auto-tagging
 """
 
 from __future__ import annotations
@@ -73,6 +74,35 @@ def cmd_forecast():
     print(f"Anomaly risk: {result.anomaly_risk}\n")
 
 
+def cmd_discover():
+    """Real discovery + dynamic SKU refresh + auto-tagging demo."""
+    from avd_masters import discovery
+
+    print("Running AVD Masters discovery...\n")
+    print("This will:")
+    print("  - Scan your Azure tenant for AVD GPU hosts")
+    print("  - Discover regions in use")
+    print("  - Refresh GPU catalog live from Azure for those regions")
+    print("  - Generate auto-tags with current SKU + cost data\n")
+
+    try:
+        hosts = discovery.scan_tenant()
+        print(f"Discovered {len(hosts)} GPU-capable session hosts.\n")
+
+        if hosts:
+            print("Sample discovered hosts:")
+            for h in hosts[:5]:
+                print(f"  - {h.name} | {h.vm_size} | {h.host_pool}")
+
+            print("\nGenerating auto-tags (dry-run mode)...")
+            tagged = discovery.auto_tag_discovered_hosts(hosts, apply_tags=False)
+            print(f"Prepared tags for {len(tagged)} hosts.")
+
+    except Exception as e:
+        print(f"Discovery failed (likely missing Azure credentials or permissions): {e}")
+        print("\nTip: Run `az login` first, or set service principal credentials.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="AVD Masters - GPU Management for AVD")
     subparsers = parser.add_subparsers(dest="command")
@@ -81,6 +111,7 @@ def main():
     subparsers.add_parser("alerts", help="Run full management + alerting demo")
     subparsers.add_parser("cost", help="Run FinOps cost attribution demo")
     subparsers.add_parser("forecast", help="Show predictive forecasting demo")
+    subparsers.add_parser("discover", help="Run discovery + dynamic SKU refresh + auto-tagging")
 
     args = parser.parse_args()
 
@@ -90,6 +121,8 @@ def main():
         cmd_cost()
     elif args.command == "forecast":
         cmd_forecast()
+    elif args.command == "discover":
+        cmd_discover()
     else:
         cmd_status()
 
