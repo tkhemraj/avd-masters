@@ -15,12 +15,9 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from azure.identity import DefaultAzureCredential
-from azure.mgmt.compute import ComputeManagementClient
-from azure.mgmt.desktopvirtualization import DesktopVirtualizationMgmtClient
-from azure.mgmt.resource import SubscriptionClient
-
 from avd_masters import catalog, cost, sku_discovery
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +48,12 @@ def scan_tenant(
     - Refreshes the GPU catalog **live** from Azure for those regions.
     - Prepares rich data for auto-tagging and alerting.
     """
+    # Lazy import — only required when actually doing live Azure discovery
+    from azure.identity import DefaultAzureCredential
+    from azure.mgmt.compute import ComputeManagementClient
+    from azure.mgmt.desktopvirtualization import DesktopVirtualizationMgmtClient
+    from azure.mgmt.resource import SubscriptionClient
+
     credential = DefaultAzureCredential()
 
     subscriptions = _get_subscriptions(credential, subscription_id)
@@ -60,6 +63,8 @@ def scan_tenant(
 
     for sub_id in subscriptions:
         try:
+            from azure.mgmt.desktopvirtualization import DesktopVirtualizationMgmtClient
+            from azure.mgmt.compute import ComputeManagementClient
             avd_client = DesktopVirtualizationMgmtClient(credential, sub_id)
             compute_client = ComputeManagementClient(credential, sub_id)
 
@@ -127,6 +132,7 @@ def auto_tag_discovered_hosts(
     results = []
 
     if credential is None:
+        from azure.identity import DefaultAzureCredential
         credential = DefaultAzureCredential()
 
     for host in hosts:
@@ -173,6 +179,7 @@ def auto_tag_discovered_hosts(
 def _get_subscriptions(credential, subscription_id: Optional[str]) -> list[str]:
     if subscription_id:
         return [subscription_id]
+    from azure.mgmt.resource import SubscriptionClient
     sub_client = SubscriptionClient(credential)
     return [s.subscription_id for s in sub_client.subscriptions.list()]
 

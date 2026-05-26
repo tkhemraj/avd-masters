@@ -3,12 +3,15 @@ AVD Masters — Main Entry Point
 
 This is the real command line interface for managing your AVD GPU environment.
 
-Usage examples:
-    python run.py                    # Show catalog + status
-    python run.py alerts             # Run the management demo with alerts
-    python run.py cost               # Show cost attribution demo
-    python run.py forecast           # Show forecasting
-    python run.py discover           # Real discovery + live SKU refresh + auto-tagging
+The signature experience:
+    python run.py midas              # The Midas Touch — Grok inside, magic happens
+
+Other useful commands:
+    python run.py                    # Catalog + basic status
+    python run.py discover           # Live Azure discovery + dynamic SKU + auto-tagging
+    python run.py alerts             # Management + alerting engine
+    python run.py cost               # FinOps attribution demo
+    python run.py forecast           # Predictive forecasting
 """
 
 from __future__ import annotations
@@ -26,10 +29,11 @@ from examples import manage_demo, finops_demo
 def banner():
     print(r"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                           AVD Masters                                          ║
+║                          AVD MASTERS — MIDAS EDITION                           ║
 ║                                                                              ║
 ║           Direct Hardware Truth for Azure Virtual Desktop                    ║
-║                    No lies. No bills. Just silicon.                          ║
+║                 Everything it touches turns into gold.                       ║
+║                    Grok inside, obviously.                                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """.strip())
 
@@ -46,7 +50,8 @@ def cmd_status():
     print(f"  Retiring SKUs:       {stats['retiring_skus']}")
     print()
 
-    print("Run `python run.py alerts` to see real management alerts and recommendations.\n")
+    print("Run `python run.py midas` — this is the one that pays for itself.\n")
+    print("Other: alerts | discover | cost | forecast\n")
 
 
 def cmd_alerts():
@@ -72,6 +77,23 @@ def cmd_forecast():
     print(f"Trend: {result.trend}")
     print(f"30-day predicted cost: ${result.total_predicted_cost:,.2f}")
     print(f"Anomaly risk: {result.anomaly_risk}\n")
+
+
+def cmd_midas():
+    """The signature Midas Touch experience — Grok inside, gold on the table."""
+    from avd_masters import midas
+
+    print("Running AVD Masters Midas Touch...\n")
+    print("This is the part where the tool actually earns its keep.\n")
+
+    try:
+        result = midas.run_midas_demo()
+        # In a real run with discovery data we would pass hosts here
+        # result = midas.perform_midas_touch(hosts=real_hosts)
+    except Exception as e:
+        print(f"Midas touch failed: {e}")
+        print("Falling back to demo mode (still shows the gold).")
+        result = midas.run_midas_demo()
 
 
 def cmd_discover():
@@ -112,6 +134,7 @@ def main():
     subparsers.add_parser("cost", help="Run FinOps cost attribution demo")
     subparsers.add_parser("forecast", help="Show predictive forecasting demo")
     subparsers.add_parser("discover", help="Run discovery + dynamic SKU refresh + auto-tagging")
+    subparsers.add_parser("midas", help="THE MIDAS TOUCH — Grok intelligence, quantified gold, signature experience")
 
     args = parser.parse_args()
 
@@ -123,6 +146,8 @@ def main():
         cmd_forecast()
     elif args.command == "discover":
         cmd_discover()
+    elif args.command == "midas":
+        cmd_midas()
     else:
         cmd_status()
 
