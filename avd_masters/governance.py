@@ -1,7 +1,7 @@
 """
 AVD Masters — Governance & Policy Engine
 
-Real governance for expensive GPU fleets. Not theater.
+Enterprise governance and compliance support for GPU-accelerated Azure Virtual Desktop environments.
 
 Why CMMC 2.0?
 

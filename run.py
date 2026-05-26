@@ -26,13 +26,11 @@ from examples import manage_demo, finops_demo
 def banner():
     print(r"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                          AVD MASTERS — MIDAS EDITION                           ║
+║                              AVD MASTERS                                     ║
 ║                                                                              ║
-║           Direct Hardware Truth for Azure Virtual Desktop                    ║
-║                 Everything it touches turns into gold.                       ║
-║                    Grok inside, obviously.                                   ║
+║           Enterprise GPU Management & Intelligence for Azure Virtual Desktop ║
 ║                                                                              ║
-║  Core: midas | touch | touch --apply-tags | discover                         ║
+║  Commands: midas | touch | touch --apply-tags | discover | alerts            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """.strip())
 
@@ -49,12 +47,11 @@ def cmd_status():
     print(f"  Retiring SKUs:       {stats['retiring_skus']}")
     print()
 
-    print("Run `python run.py midas` or `python run.py touch` — these are the ones that pay for themselves.\n")
-    print("Key commands:")
-    print("  midas     → Pure intelligence report (gold + brutal truth)")
-    print("  touch     → Full experience (discovery + midas + governance + CMMC 2.0 + playbooks)")
-    print("  touch --apply-tags → Same as above but actually writes tags (use carefully)")
-    print("  discover  | alerts | cost | forecast\n")
+    print("Recommended starting points:")
+    print("  python run.py midas          # Intelligence and savings analysis")
+    print("  python run.py touch          # Complete operational workflow")
+    print("  python run.py touch --apply-tags")
+    print("\nAdditional commands: discover | alerts | cost | forecast\n")
 
 
 def cmd_alerts(email: bool = False):

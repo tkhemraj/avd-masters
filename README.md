@@ -1,9 +1,8 @@
 # AVD Masters
 
-**The professional GPU monitoring and management platform for Azure Virtual Desktop.**
+**The enterprise GPU management and intelligence platform for Azure Virtual Desktop.**
 
-> Direct hardware truth. Real alerts. Actionable intelligence.  
-> Zero Azure Monitor tax.
+AVD Masters delivers direct hardware truth, actionable intelligence, and professional governance for organizations running high-value GPU workloads on Azure Virtual Desktop — without the cost and limitations of traditional monitoring approaches.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,19 +11,20 @@
 
 ---
 
-## The Problem
+## The Challenge
 
-Most tools for monitoring GPU workloads on AVD are either:
+Organizations running GPU-accelerated AVD workloads face a consistent set of problems:
 
-- **Expensive** — Heavy reliance on Azure Monitor + Log Analytics
-- **Inaccurate** — Sampled data that fails on fractional GPUs
-- **Shallow** — Pretty dashboards with very little actionable value
+- **High cost of traditional monitoring** — Heavy dependence on Azure Monitor and Log Analytics creates significant ongoing expense.
+- **Inaccurate data on fractional GPUs** — Most tools fail to properly account for vGPU partitioning (1/6, 1/3, 1/2, etc.).
+- **Lack of actionable insight** — Dashboards show metrics, but rarely deliver clear, prioritized recommendations with quantified business impact.
+- **Governance and compliance pressure** — Especially for organizations subject to CMMC 2.0, NIST 800-171, or other regulated environments.
 
-**AVD Masters exists to fix this.**
+AVD Masters was built to solve these problems with a direct, intelligence-first approach.
 
 ---
 
-## What GROKY Actually Delivers
+## Core Capabilities
 
 | Area                    | What You Get                                                                 |
 |-------------------------|-------------------------------------------------------------------------------|
@@ -37,28 +37,43 @@ Most tools for monitoring GPU workloads on AVD are either:
 
 ---
 
-### Real Output Examples
+---
 
-GROKY produces professional, usable artifacts — not just raw metrics.
+## Signature Experiences
 
-**Management Alerts**  
-Actionable alerts with clear impact and recommended actions.
+### `midas`
+Pure intelligence. Run `python run.py midas` to receive a high-signal report showing current spend, recoverable savings opportunities, and prioritized actions — written in clear, direct language.
 
-![Management Alerts](docs/assets/alerts-report.jpg)
+### `touch`
+The full orchestrated experience. `python run.py touch` performs discovery, runs Midas analysis, overlays governance and CMMC 2.0 alignment, prepares rich Azure tags, and generates remediation playbooks.
 
-**FinOps Showback Report**  
-Finance-ready cost attribution with per-host breakdown.
-
-![FinOps Report](docs/assets/finops-report.jpg)
-
-**Tags + Optimization Recommendations**  
-Ready-to-apply Azure tags and prioritized savings opportunities.
-
-![Recommendations](docs/assets/recommendations-report.jpg)
+When configured, `touch` can also send targeted email notifications when material issues are detected.
 
 ---
 
-## Quick Start
+## Getting Started
+
+```bash
+git clone https://github.com/tkhemraj/avd-masters.git
+cd avd-masters
+
+pip install -r requirements.txt
+cp .env.example .env
+
+# Configure Azure credentials and (optionally) WinRM/SSH access for direct collection
+python run.py
+```
+
+### Recommended Commands
+
+```bash
+python run.py midas                    # Intelligence report with quantified opportunities
+python run.py touch                    # Full discovery + analysis + governance + playbooks
+python run.py touch --apply-tags       # Same as above, with tag application (use with care)
+python run.py discover                 # Focused discovery and live SKU refresh
+```
+
+For production use, review `governance.py` for CMMC configuration guidance and `alerting.py` for email notification setup.
 
 ```bash
 git clone https://github.com/tkhemraj/avd-masters.git
@@ -86,44 +101,45 @@ python run.py forecast        # Predictive cost forecasting demo
 
 ---
 
-## Documentation
+## Enterprise Governance
 
-| Document                    | Purpose                                      |
-|----------------------------|----------------------------------------------|
-| [FEATURES.md](FEATURES.md) | Enterprise features for Microsoft customers  |
-| [MEGA-FEATURES.md](MEGA-FEATURES.md) | Ambitious long-term vision & platform direction |
-| [docs/index.html](docs/index.html) | Beautiful interactive product demo           |
+AVD Masters includes first-class support for organizations operating under regulatory requirements:
+
+- **Fleet Health Scoring** — A single, meaningful metric for leadership visibility.
+- **Cross-Subscription Rollups** — Governance views across complex Azure estates.
+- **CMMC 2.0 Alignment** — Explicit mapping to relevant NIST 800-171 / CMMC 2.0 domains (AC, AU, CM, IR, PM, RA, SI), with honest coverage assessment and evidence generation suitable for audits.
+
+See `governance.py` for the detailed rationale and control mappings.
 
 ---
 
 ## Philosophy
 
-- **Direct over sampled** — We talk to the metal.
-- **Useful over pretty** — Alerts and recommendations that help you manage.
-- **Low cost by default** — No forced expensive Azure services.
-- **Enterprise ready** — Built with FinOps, governance, and large-scale operations in mind.
-- **CMMC 2.0 aware** — Governance layer aligned with the U.S. DoD Cybersecurity Maturity Model Certification (NIST 800-171) because a large portion of serious AVD GPU workloads live in the defense contractor and federal ecosystem.
+- **Direct over sampled** — We collect truth from the hardware itself.
+- **Actionable over decorative** — Every output is designed to drive a decision.
+- **Cost-efficient by default** — No forced reliance on expensive Azure data services.
+- **Enterprise-grade governance** — Built with FinOps, risk management, and regulated environments in mind.
+- **Professional by design** — Clear documentation, predictable behavior, and output suitable for technical and business stakeholders.
 
 ---
 
 ## Current Focus
 
-We are actively building real, usable management capabilities:
+AVD Masters is under active development with emphasis on:
 
-- Midas Touch intelligence (the signature "everything it touches turns to gold" experience)
-- Real utilization signals layer for accurate idle/waste detection
-- Governance + Fleet Health + cross-sub visibility, with explicit CMMC 2.0 alignment (see `governance.py` for the rationale)
-- One-command `touch` that does discovery → analysis → tagging → playbooks
-- Strong CLI with Grok-grade direct, high-signal output
+- High-fidelity intelligence (Midas) that consistently surfaces material savings and risk
+- Production-grade signals collection patterns
+- Deep enterprise governance, including CMMC 2.0 support
+- One-command operational experiences (`touch`)
 
-This is not a marketing project. It's a tool designed to help teams that actually run expensive GPU infrastructure on Azure.
+The project is designed for teams that manage expensive GPU infrastructure and need both operational excellence and defensible governance artifacts.
 
 ---
 
 ## License
 
-MIT License — Use it, fork it, improve it.
+MIT License
 
 ---
 
-**Built for people who need to know what's actually happening with their GPUs — and what to do about it.**
+**Built for organizations that need to understand exactly what is happening with their GPUs — and what to do about it.**

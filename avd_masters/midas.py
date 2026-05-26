@@ -1,18 +1,15 @@
 """
 AVD Masters — Midas Touch Intelligence Engine
-"Grok inside, obviously."
 
-This is where the magic happens.
+The Midas module delivers the platform's signature intelligence capability.
 
-The Midas module is the beating heart of AVD Masters' "everything it touches turns to gold" philosophy.
-It takes raw discovery + catalog truth + (eventually) real usage signals and produces:
+It analyzes discovery data, catalog information, and utilization signals to produce:
 
-- Brutally clear insights
-- Quantified gold (real dollar savings opportunities)
-- Grok-flavored, high-signal, low-BS recommendations
-- Executive-ready narratives that make finance and platform teams go "finally, someone who gets it"
+- Clear, prioritized insights with quantified business impact
+- Actionable recommendations expressed in both operational and financial terms
+- Executive-ready narratives suitable for technical and business stakeholders
 
-This is not a dashboard. This is a decision-support weapon.
+The goal is to turn raw operational data into decision-grade intelligence.
 """
 
 from __future__ import annotations
