@@ -28,9 +28,10 @@ def banner():
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                              AVD MASTERS                                     ║
 ║                                                                              ║
-║           Enterprise GPU Management & Intelligence for Azure Virtual Desktop ║
+║     Practical Python Toolkit for Operating Azure Virtual Desktop at Scale    ║
 ║                                                                              ║
-║  Commands: midas | touch | touch --apply-tags | discover | alerts            ║
+║  Core:  midas | touch | profiles | discover                                  ║
+║  Other: alerts | cost | forecast                                             ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """.strip())
 
