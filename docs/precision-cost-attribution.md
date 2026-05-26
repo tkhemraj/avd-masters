@@ -124,6 +124,22 @@ That is the difference between another monitoring tool and a decision-grade plat
 
 ---
 
+## New: Latency & User Experience as First-Class Citizens
+
+AVD Masters now treats **user experience** with the same rigor as cost.
+
+The Signals layer has been extended with:
+
+- `p95_frame_time_ms` (the real killer of "it feels slow")
+- `input_latency_ms` (end-to-end input to screen)
+- Network and encoding latency fields
+
+Midas now surfaces opportunities like **"bad_experience_on_expensive_hardware"** — because paying premium prices for hardware that delivers janky performance is the most painful form of waste.
+
+This is the beginning of turning AVD Masters from a cost tool into the complete operating system for high-performance, high-expectation AVD environments.
+
+---
+
 **Next steps**
 
 - Run `python run.py touch` to see the current tagging and analysis in action.
