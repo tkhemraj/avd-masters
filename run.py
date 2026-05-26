@@ -115,7 +115,7 @@ def cmd_touch(apply_tags: bool = False):
     The ultimate 'Midas Touch' one-command experience.
     Discover → Analyze like Grok → Generate gold tags → Actionable remediation playbooks.
     """
-    from avd_masters import discovery, governance, midas, profiles, signals
+    from avd_masters import discovery, governance, midas, profiles, signals, toolkit
 
     print("\n" + "═" * 72)
     print("║" + " AVD MASTERS — ONE COMMAND TOUCH ".center(70) + "║")
@@ -159,8 +159,22 @@ def cmd_touch(apply_tags: bool = False):
             # Profile configuration analysis (one of the biggest sources of AVD pain)
             print("\nPhase 2.5: Profile Management Health Check")
             try:
-                # Demo using the new ProfileConfig structure
-                # In production: call profiles.collect_profile_config(host, winrm_session)
+                # New: Azure-side profile storage analysis (no PowerShell required)
+                # In real usage you would pass real storage account + share names discovered or configured
+                sample_storage_analysis = toolkit.analyze_profile_storage(
+                    "contosofslogix", "profiles", None, "demo-sub"
+                )
+                recs = toolkit.generate_profile_storage_recommendations(sample_storage_analysis)
+                print("  Profile Storage Analysis (Azure-side, no host execution):")
+                print(f"     Storage: {sample_storage_analysis.storage_account}/{sample_storage_analysis.share_or_container}")
+                print(f"     Tier: {sample_storage_analysis.performance_tier}")
+                print(f"     Estimated containers: {sample_storage_analysis.estimated_vhd_count}")
+                if recs:
+                    print("     Recommendations:")
+                    for r in recs[:2]:
+                        print(f"       - {r}")
+
+                # Host-level profile config (still benefits from some host collection)
                 sample_configs = [
                     profiles.ProfileConfig(fslogix_enabled=False, is_roaming_enabled=True)
                     for _ in (hosts[:3] if hosts else [1,2,3])
@@ -169,11 +183,9 @@ def cmd_touch(apply_tags: bool = False):
                                    for i, cfg in enumerate(sample_configs)]
                 profile_opps = midas.analyze_profile_debt(profile_healths)
                 if profile_opps:
-                    print("  ⚠️  Profile configuration issues detected (common AVD setup disasters):")
-                    for opp in profile_opps[:3]:
+                    print("  ⚠️  Host-level profile issues detected:")
+                    for opp in profile_opps[:2]:
                         print(f"     - {opp['host']}: {opp['type']}")
-                else:
-                    print("  Profile configuration looks reasonable in this scan.")
             except Exception as e:
                 print(f"  Profile analysis skipped: {e}")
     except Exception as e:
