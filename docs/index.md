@@ -1,39 +1,44 @@
 # GROKY 2.0 Documentation
 
-**Premium documentation for the premium GPU monitor.**
+**Professional documentation for a professional management platform.**
 
-Welcome to the official documentation for **[GROKY 2.0](https://github.com/tkhemraj/groky)** — the agentless, direct-from-hardware GPU monitoring solution for Azure Virtual Desktop.
+Welcome to the official documentation for **[GROKY 2.0](https://github.com/tkhemraj/groky)** — the direct, agentless GPU monitoring and management platform for Azure Virtual Desktop.
 
----
-
-## Quick Links
-
-| Section                    | Description                                      |
-|---------------------------|--------------------------------------------------|
-| [Getting Started](getting-started.md) | Installation and first run                      |
-| **[Live Demo](index.html)** | Beautiful interactive product demo page         |
-| [The Catalog](catalog.md) | The best Azure GPU SKU reference in existence   |
-| [Architecture](architecture.md) | How GROKY is built and why it works             |
-| [Configuration](configuration.md) | .env, hosts.yaml, and all settings              |
+GROKY is built for teams that need **real visibility, real alerts, and real recommendations** — not just another dashboard.
 
 ---
 
-## What Makes GROKY Special
+## Documentation
 
-- **Zero compromise on hardware truth**
-- **Proper fractional GPU modeling** (most tools get this wrong)
-- **Modern silicon support** (H100, H200, MI300X, etc.)
-- **Agentless by design**
-- **Insanely cheap to run**
-
----
-
-## Current Focus
-
-GROKY is being built in the open with extremely high standards. Right now the foundation (especially the catalog) is already stronger than most complete commercial tools.
-
-We are not rushing features. We are building something people will be proud to run.
+| Document | Description |
+|----------|-------------|
+| [Getting Started](getting-started.md) | Installation and first-run guide |
+| **[Live Demo](index.html)** | Beautiful, interactive product experience |
+| [The Catalog](catalog.md) | The most accurate Azure GPU SKU reference available |
+| [Architecture](architecture.md) | How GROKY is designed and why it works |
+| [Configuration](configuration.md) | Environment variables and hosts.yaml |
 
 ---
 
-**Ready to dive in?** Start with [Getting Started](getting-started.md).
+## Additional Resources
+
+| Resource | Purpose |
+|----------|---------|
+| [FEATURES.md](../FEATURES.md) | Enterprise features for Microsoft customers |
+| [MEGA-FEATURES.md](../MEGA-FEATURES.md) | Long-term ambitious vision |
+| [GitHub Repository](https://github.com/tkhemraj/groky) | Source code and issue tracking |
+
+---
+
+## Philosophy
+
+GROKY prioritizes:
+
+- **Direct hardware truth** over sampled approximations
+- **Actionable intelligence** over pretty visualizations
+- **Low cost** by default (no forced expensive Azure services)
+- **Real management value** — alerts and recommendations you can act on
+
+---
+
+This documentation is intentionally concise. GROKY is designed to be straightforward to operate.

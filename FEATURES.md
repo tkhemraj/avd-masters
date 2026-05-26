@@ -1,116 +1,113 @@
-# GROKY 2.0 — Enterprise Features for Microsoft Customers
+# GROKY 2.0 — Enterprise Features
 
-This document outlines high-value features that large Azure / Microsoft customers (especially FinOps, Cloud Governance, and AVD platform teams) consistently ask for.
+> High-value capabilities designed specifically for large Azure and Microsoft customers.
 
-These features are designed to respect GROKY's core philosophy: **direct truth, low cost, no unnecessary Azure Monitor dependency**.
+This document outlines the practical enterprise features that FinOps teams, Cloud Governance organizations, and AVD platform teams consistently need — but rarely find in existing tools.
+
+All features respect GROKY's core principles:
+- **Direct hardware truth**
+- **Low (or zero) Azure Monitor dependency**
+- **Actionable output** over pretty dashboards
 
 ---
 
-## 1. FinOps Cost Attribution & Auto-Tagging (Core)
+## 1. FinOps Cost Attribution & Auto-Tagging
 
-**Problem:** Enterprises have almost no visibility into the real cost of GPU workloads on AVD. Azure Cost Management shows VM cost, but not "this user session cost $X in GPU time".
+**The Problem**  
+Enterprises have almost zero visibility into the *real* cost of GPU workloads running on AVD. Azure Cost Management shows VM spend, but not "this specific workload is burning $X per day in GPU time."
 
-**Solution:**
-- Calculate accurate **cost per GPU-second** and **cost per session**.
-- Support Pay-As-You-Go, Reserved Instances, and Spot pricing.
-- Automatically apply rich Azure tags:
+**What GROKY Delivers**
+- Accurate **cost per GPU-second** and **cost per session** calculations
+- Support for Pay-As-You-Go, Reserved Instances, and Spot pricing models
+- Automatic generation of rich Azure tags:
+  - `groky:cost-per-second`
   - `groky:cost-per-hour`
-  - `groky:gpu-seconds`
-  - `groky:imbalance-impact`
+  - `groky:total-cost-estimate`
+  - `groky:gpu-model`
   - `groky:recommendation`
-- Generate daily/weekly showback and chargeback reports.
-- Pull live pricing from the [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
+- Showback and chargeback report generation
+- Integration with the [Azure Retail Prices API](https://prices.azure.com/api/retail/prices) for live pricing
 
-**Why Microsoft customers love this:**
-- Direct integration with their existing tagging + cost management processes.
-- Enables real chargeback to business units.
-- Huge win for FinOps teams.
+**Why This Matters**  
+This is table stakes for any serious FinOps program. It enables real chargeback to business units and gives finance teams credible data.
 
 ---
 
-## 2. Intelligent Optimization Recommendations Engine
+## 2. Intelligent Optimization Recommendations
 
-**Problem:** Teams know they have waste but don't know exactly what to do about it.
+**The Problem**  
+Teams know they have waste, but they don't know exactly *what* to change or how much money it would save.
 
-**Solution:**
-GROKY analyzes historical + real-time data and produces clear, prioritized recommendations:
+**What GROKY Delivers**
+- Actionable recommendations with estimated dollar impact
+- Examples:
+  - Rebalancing opportunities with projected savings
+  - Right-sizing suggestions (H100 → L40S, etc.)
+  - Reserved Instance / Savings Plan opportunities
+  - Autoscale policy recommendations
 
-- "Host pool `prod-gpu-east` is 41% imbalanced. Consolidating 3 workloads could save ~$1,240/month."
-- "You are running 14 fractional H100s at <25% average. Consider switching 6 hosts to A10-based pools."
-- "This host pool is a good candidate for AVD Autoscale with these specific rules."
-- "Reserved Instance coverage opportunity: $8,700/year potential savings."
-
-Recommendations include estimated dollar impact and one-click (or copy-paste) remediation guidance.
+**Why This Matters**  
+Turns raw monitoring data into a decision-support system for platform teams.
 
 ---
 
-## 3. Governance, Policy & Compliance Engine
+## 3. Governance & Policy Engine
 
-**Problem:** Large organizations need to enforce rules around GPU usage for cost control, security, and licensing compliance.
+**The Problem**  
+Large organizations need to enforce rules around GPU usage for cost control, security, compliance, and licensing.
 
-**Solution:**
-Define policies such as:
+**What GROKY Delivers**
+- Definable policies (max utilization, imbalance thresholds, tagging requirements, etc.)
+- Violation detection with history
+- Configurable alerting and remediation triggers (webhooks, Logic Apps, Runbooks)
+- Compliance reporting
 
-- Max GPU utilization threshold over time
-- Imbalance score must stay below X
-- All GPU VMs must carry specific mandatory tags
-- No session host should run > 14 days without reboot (common best practice)
-- Alert when fractional GPU waste exceeds defined threshold
-
-Violations are tracked with history and can trigger:
-- Azure Tags
-- Webhooks / Event Grid events
-- Logic App / Runbook remediation
-
-This is extremely valuable for regulated industries and large Microsoft customers with strict Cloud Governance teams.
+**Why This Matters**  
+Critical for regulated industries and any company with a mature Cloud Governance function.
 
 ---
 
 ## 4. Chargeback, Showback & Executive Reporting
 
-**Problem:** Finance and leadership teams need clean, credible reports — not raw metrics.
+**The Problem**  
+Finance and leadership teams need clean, credible reports — not raw metrics or engineering dashboards.
 
-**Solution:**
-- Scheduled or on-demand reports (daily, weekly, monthly)
-- Breakdown by:
-  - Business unit / cost center (via tags)
-  - Host pool
-  - Application / user group
-  - GPU type (H100 vs A10 vs MI300X)
-- Export formats: Excel, PDF, CSV, JSON
-- Optional push to cheap storage (Azure Blob, Table Storage, or even SharePoint)
+**What GROKY Delivers**
+- Scheduled or on-demand reports
+- Breakdown by business unit, host pool, application, GPU type
+- Export to Excel, PDF, CSV, JSON
+- Optional export to cheap Azure storage
 
-Includes both **utilization** and **real dollar cost** views.
+**Why This Matters**  
+Makes GROKY valuable far beyond the infrastructure team.
 
 ---
 
-## 5. Lightweight Azure-Native Integration Layer
+## 5. Lightweight Azure-Native Integration
 
-**Problem:** Many teams want some Azure integration but don't want to pay Log Analytics prices or lose direct hardware accuracy.
+**The Problem**  
+Many teams want Azure integration but refuse to pay Log Analytics prices or accept loss of direct hardware accuracy.
 
-**Solution:**
-GROKY offers several low-cost integration points:
+**What GROKY Delivers**
+- Low-cost integration points:
+  - Azure Event Grid
+  - Logic Apps / Azure Functions
+  - Azure Storage / Data Explorer
+  - Webhooks (Teams, Slack, ServiceNow, PagerDuty, etc.)
+- Selective use of Azure Monitor Metrics for only the most important signals
 
-- Send events to **Azure Event Grid** (very cheap)
-- Trigger **Logic Apps** or **Azure Functions** on thresholds
-- Export aggregated metrics to **Azure Storage** or **Azure Data Explorer** (ADX) clusters
-- Support for **Azure Monitor Metrics** (custom metrics) for the most important signals only
-- Webhook support for Teams, Slack, ServiceNow, etc.
-
-This gives customers the "Microsoft ecosystem" feeling without forcing them into expensive data ingestion.
-
----
-
-## Philosophy for All New Features
-
-- Never force expensive Azure services.
-- Always provide real dollar impact where possible.
-- Make governance and FinOps first-class citizens.
-- Keep the core agentless + direct-from-hardware experience.
-- Design for large enterprises with many subscriptions and strict controls.
+**Why This Matters**  
+Gives teams the Microsoft ecosystem experience without forcing them into expensive data ingestion.
 
 ---
 
-These five features, combined with the existing world-class GPU catalog, would make GROKY extremely compelling inside Microsoft and for their largest AVD customers.
+## Summary
 
-**Status:** Early design phase. Contributions and feedback welcome.
+These five features are deliberately chosen because they solve *real* problems that keep FinOps, Governance, and AVD platform leaders up at night.
+
+GROKY is not trying to be another monitoring dashboard.  
+It is being built to be a **management and decision-support system** for expensive GPU infrastructure on Azure.
+
+---
+
+**Next:** See [MEGA-FEATURES.md](MEGA-FEATURES.md) for the more ambitious, platform-level vision.
