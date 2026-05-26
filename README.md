@@ -37,6 +37,27 @@ Most tools for monitoring GPU workloads on AVD are either:
 
 ---
 
+### Real Output Examples
+
+GROKY produces professional, usable artifacts — not just raw metrics.
+
+**Management Alerts**  
+Actionable alerts with clear impact and recommended actions.
+
+![Management Alerts](docs/assets/alerts-report.jpg)
+
+**FinOps Showback Report**  
+Finance-ready cost attribution with per-host breakdown.
+
+![FinOps Report](docs/assets/finops-report.jpg)
+
+**Tags + Optimization Recommendations**  
+Ready-to-apply Azure tags and prioritized savings opportunities.
+
+![Recommendations](docs/assets/recommendations-report.jpg)
+
+---
+
 ## Quick Start
 
 ```bash
