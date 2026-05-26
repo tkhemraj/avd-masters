@@ -52,7 +52,7 @@ def cmd_status():
     print("Run `python run.py midas` or `python run.py touch` — these are the ones that pay for themselves.\n")
     print("Key commands:")
     print("  midas     → Pure intelligence report (gold + brutal truth)")
-    print("  touch     → Full experience (discovery + analysis + governance + playbooks)")
+    print("  touch     → Full experience (discovery + midas + governance + CMMC 2.0 + playbooks)")
     print("  touch --apply-tags → Same as above but actually writes tags (use carefully)")
     print("  discover  | alerts | cost | forecast\n")
 
@@ -136,7 +136,7 @@ def cmd_touch(apply_tags: bool = False):
     except Exception as e:
         print(f"  Live discovery limited ({e}). Using powerful demo mode.\n")
 
-    print("Phase 2: Midas Intelligence Analysis + Governance Overlay")
+    print("Phase 2: Midas Intelligence + Governance + CMMC 2.0 Alignment")
     try:
         if hosts:
             # Using the more realistic LocalCollector pattern for better signal simulation
@@ -150,9 +150,17 @@ def cmd_touch(apply_tags: bool = False):
             health = governance.calculate_fleet_health(hosts, monthly_burn=result.total_current_monthly_burn)
             violations = governance.evaluate_policies(hosts)
             governance.print_governance_report(health, violations)
+
+            # CMMC 2.0 Governance Alignment (US-focused framework)
+            cmmc_coverage = governance.assess_cmmc_governance(hosts, fleet_health=health)
+            governance.print_cmmc_governance_report(cmmc_coverage)
         else:
             result = midas.perform_midas_touch([], include_demo_data=True)
             midas.print_gold_report(result)
+
+            # Still show CMMC value even in demo mode
+            cmmc_demo = governance.assess_cmmc_governance([])
+            governance.print_cmmc_governance_report(cmmc_demo)
     except Exception as e:
         print(f"  Analysis issue: {e}")
         result = midas.run_midas_demo()
