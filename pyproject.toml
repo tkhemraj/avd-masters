@@ -1,5 +1,5 @@
 [project]
-name = "avdmonitor-groky2.0"
+name = "groky"
 version = "2.0.0"
 description = "GROKY 2.0 — The ruthless, agentless GPU monitor for Azure Virtual Desktop. Direct hardware truth. Zero Azure Monitor tax. Built different."
 readme = "README.md"

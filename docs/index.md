@@ -2,7 +2,7 @@
 
 **Premium documentation for the premium GPU monitor.**
 
-Welcome to the official documentation for GROKY 2.0 — the agentless, direct-from-hardware GPU monitoring solution for Azure Virtual Desktop.
+Welcome to the official documentation for **[GROKY 2.0](https://github.com/tkhemraj/groky)** — the agentless, direct-from-hardware GPU monitoring solution for Azure Virtual Desktop.
 
 ---
 

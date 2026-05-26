@@ -6,7 +6,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status](https://img.shields.io/badge/status-early%20foundation-orange)](https://github.com)
+[![GitHub](https://img.shields.io/badge/GitHub-tkhemraj/groky-black?style=flat&logo=github)](https://github.com/tkhemraj/groky)
+[![Status](https://img.shields.io/badge/status-early%20foundation-orange)](https://github.com/tkhemraj/groky)
 
 ---
 
@@ -83,8 +84,8 @@ See the full catalog: [docs/catalog.md](docs/catalog.md)
 ## Quick Start
 
 ```bash
-git clone https://github.com/your-org/avdmonitor-groky2.0.git
-cd avdmonitor-groky2.0
+git clone https://github.com/tkhemraj/groky.git
+cd groky
 
 pip install -r requirements.txt
 

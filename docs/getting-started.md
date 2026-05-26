@@ -15,8 +15,8 @@ This guide will get you running quickly with the right mindset.
 ## Installation
 
 ```bash
-git clone https://github.com/your-org/avdmonitor-groky2.0
-cd avdmonitor-groky2.0
+git clone https://github.com/tkhemraj/groky.git
+cd groky
 
 pip install -r requirements.txt
 ```
