@@ -271,6 +271,36 @@ def cmd_profiles(storage_account: str = None, share: str = None):
     print("═" * 72 + "\n")
 
 
+def cmd_bpa():
+    """Run the AVD Best Practices Analyzer."""
+    from avd_masters import toolkit
+
+    print("\n" + "═" * 72)
+    print("║" + " AVD MASTERS — BEST PRACTICES ANALYZER (BPA) ".center(70) + "║")
+    print("═" * 72 + "\n")
+
+    # Demo environment data (in real use this would be gathered)
+    demo_env = {
+        "avg_profile_health_score": 42,
+        "has_experience_aware_autoscale": False,
+        "image_drift_detected": True,
+        "recoverable_gold_pct": 31,
+    }
+
+    checks = toolkit.run_avd_best_practices_analyzer(demo_env)
+
+    for check in checks:
+        status = "PASS" if check.passed else check.severity.upper()
+        print(f"[{status}] {check.id} — {check.title}")
+        print(f"  {check.details}")
+        print(f"  → {check.recommendation}\n")
+
+    print("═" * 72)
+    print("  This is an evolving AVD BPA. Microsoft doesn't ship a good one.")
+    print("  Run this regularly and treat critical/high items seriously.")
+    print("═" * 72 + "\n")
+
+
 def cmd_discover():
     """Real discovery + dynamic SKU refresh + auto-tagging demo."""
     from avd_masters import discovery
@@ -318,6 +348,8 @@ def main():
     profiles_parser.add_argument("--storage-account", help="Analyze Azure-side profile storage (no host execution needed)")
     profiles_parser.add_argument("--share", help="Share or container name")
 
+    subparsers.add_parser("bpa", help="Run AVD Best Practices Analyzer (comprehensive checks like SQL/Exchange BPA)")
+
     args = parser.parse_args()
 
     if args.command == "alerts":
@@ -337,6 +369,8 @@ def main():
             storage_account=getattr(args, "storage_account", None),
             share=getattr(args, "share", None)
         )
+    elif args.command == "bpa":
+        cmd_bpa()
     else:
         cmd_status()
 
