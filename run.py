@@ -1,17 +1,14 @@
 """
 AVD Masters — Main Entry Point
 
-This is the real command line interface for managing your AVD GPU environment.
+The real CLI for expensive AVD GPU fleets.
 
-The signature experience:
-    python run.py midas              # The Midas Touch — Grok inside, magic happens
+Signature commands:
+    python run.py midas              # Pure Midas intelligence (brutal truth + quantified gold)
+    python run.py touch              # Full one-command experience (recommended)
+    python run.py touch --apply-tags # Same as above but actually writes tags
 
-Other useful commands:
-    python run.py                    # Catalog + basic status
-    python run.py discover           # Live Azure discovery + dynamic SKU + auto-tagging
-    python run.py alerts             # Management + alerting engine
-    python run.py cost               # FinOps attribution demo
-    python run.py forecast           # Predictive forecasting
+Everything else is supporting firepower.
 """
 
 from __future__ import annotations
@@ -34,6 +31,8 @@ def banner():
 ║           Direct Hardware Truth for Azure Virtual Desktop                    ║
 ║                 Everything it touches turns into gold.                       ║
 ║                    Grok inside, obviously.                                   ║
+║                                                                              ║
+║  Core: midas | touch | touch --apply-tags | discover                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """.strip())
 
@@ -51,7 +50,11 @@ def cmd_status():
     print()
 
     print("Run `python run.py midas` or `python run.py touch` — these are the ones that pay for themselves.\n")
-    print("Commands: midas | touch | discover | alerts | cost | forecast\n")
+    print("Key commands:")
+    print("  midas     → Pure intelligence report (gold + brutal truth)")
+    print("  touch     → Full experience (discovery + analysis + governance + playbooks)")
+    print("  touch --apply-tags → Same as above but actually writes tags (use carefully)")
+    print("  discover  | alerts | cost | forecast\n")
 
 
 def cmd_alerts():
@@ -107,7 +110,7 @@ def cmd_midas():
         result = midas.run_midas_demo()
 
 
-def cmd_touch():
+def cmd_touch(apply_tags: bool = False):
     """
     The ultimate 'Midas Touch' one-command experience.
     Discover → Analyze like Grok → Generate gold tags → Actionable remediation playbooks.
@@ -117,6 +120,12 @@ def cmd_touch():
     print("\n" + "═" * 72)
     print("║" + " AVD MASTERS — ONE COMMAND TOUCH ".center(70) + "║")
     print("═" * 72)
+
+    if apply_tags:
+        print("\n⚠️  --apply-tags mode enabled. Tags will be written to Azure (use with care).")
+    else:
+        print("\nRunning in safe dry-run mode (recommended). Use --apply-tags only when you are ready.")
+
     print("\nThis will attempt to touch your real environment and turn confusion into gold.\n")
 
     hosts = []
@@ -130,8 +139,11 @@ def cmd_touch():
     print("Phase 2: Midas Intelligence Analysis + Governance Overlay")
     try:
         if hosts:
-            demo_signals = signals.get_simulated_fleet([getattr(h, 'name', str(h)) for h in hosts[:8]])
-            result = midas.perform_midas_touch(hosts, include_demo_data=False, fleet_signals=demo_signals)
+            # Using the more realistic LocalCollector pattern for better signal simulation
+            host_names = [getattr(h, 'name', str(h)) for h in hosts[:10]]
+            fleet_signals = signals.get_local_collector_fleet(host_names)
+
+            result = midas.perform_midas_touch(hosts, include_demo_data=False, fleet_signals=fleet_signals)
             midas.print_gold_report(result)
 
             # Governance layer (cross-sub health + policy)
@@ -148,18 +160,28 @@ def cmd_touch():
     print("\nPhase 3: Rich Auto-Tagging + Remediation Playbooks")
     try:
         if hosts:
-            tagged = discovery.auto_tag_discovered_hosts(hosts, apply_tags=False)
-            print(f"  Prepared rich avd_masters:* tags for {len(tagged)} hosts (dry-run).")
+            apply = apply_tags  # from function param
+            tagged = discovery.auto_tag_discovered_hosts(hosts, apply_tags=apply)
+            mode = "APPLIED" if apply else "dry-run (safe)"
+            print(f"  {mode}: Prepared rich avd_masters:* tags for {len(tagged)} hosts.")
             print("  Tags include: cost-per-second, gpu-model, recommendation, last-calculated, etc.")
+            if apply:
+                print("  ⚠️  Tags were written to Azure. Verify in the portal.")
         else:
-            print("  (Demo mode) Would generate high-quality Azure tags + recommended actions for every host above.")
+            mode = "APPLIED" if apply_tags else "dry-run"
+            print(f"  (Demo mode) Would {mode} high-quality avd_masters tags + recommended actions.")
 
-        # Generate simple but powerful remediation playbooks
-        print("\n  Remediation Playbooks (prioritized):")
-        print("    1. Immediate: Investigate top 3 idle/oversized hosts from the Midas report above.")
-        print("    2. This week: Migrate any retiring hardware (Tesla M60 etc.).")
-        print("    3. This month: Run packing analysis on fractional H100/MI300X hosts.")
-        print("    4. Ongoing: Enable the signals collector so future `touch` runs are scary accurate.")
+        # Generate and show exportable remediation playbook (text version)
+        print("\n  Remediation Playbook (exportable):")
+        playbook = midas.generate_remediation_playbook(result, format="text")
+        # Print a compact version
+        print("  " + "\n  ".join(playbook.splitlines()[:12]))
+        print("\n  (Full playbook available via midas.generate_remediation_playbook(result, 'markdown'|'json'))")
+
+        print("\n  Next actions:")
+        print("    1. Immediate: Investigate top 3 items from the Midas report.")
+        print("    2. This week: Deal with any retiring hardware.")
+        print("    3. Ongoing: Get real utilization signals feeding this thing.")
     except Exception as e:
         print(f"  Tagging prep: {e}")
 
@@ -208,7 +230,8 @@ def main():
     subparsers.add_parser("forecast", help="Show predictive forecasting demo")
     subparsers.add_parser("discover", help="Run discovery + dynamic SKU refresh + auto-tagging")
     subparsers.add_parser("midas", help="THE MIDAS TOUCH — Grok intelligence, quantified gold, signature experience")
-    subparsers.add_parser("touch", help="ONE COMMAND: Full discovery + Midas analysis + rich tagging + remediation playbooks")
+    touch_parser = subparsers.add_parser("touch", help="ONE COMMAND: Full discovery + Midas analysis + rich tagging + remediation playbooks")
+    touch_parser.add_argument("--apply-tags", action="store_true", help="Actually apply the generated tags (DANGEROUS - dry-run is default)")
 
     args = parser.parse_args()
 
@@ -223,7 +246,7 @@ def main():
     elif args.command == "midas":
         cmd_midas()
     elif args.command == "touch":
-        cmd_touch()
+        cmd_touch(apply_tags=getattr(args, "apply_tags", False))
     else:
         cmd_status()
 

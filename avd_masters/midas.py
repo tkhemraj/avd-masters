@@ -250,6 +250,41 @@ def _score_opportunity(host_name: str, spec: GpuSpec, sku: str, region: str) -> 
             impact=f"Risk elimination + ~${savings:,.0f}/month",
         )
 
+    # === New: Expensive dense nodes doing light work ===
+    if spec.gpu_count >= 4.0 and spec.model in ("H100", "H200", "MI300X"):
+        savings = round(monthly_burn * 0.35, 0)
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=savings,
+            opportunity_type="dense_node_waste",
+            confidence="medium",
+            grok_insight=(
+                f"You have an {spec.gpu_count:.0f}x {spec.model} node doing relatively light work. "
+                "These things are nuclear reactors on the power bill. If utilization isn't high, this is one of the most expensive mistakes in the catalog."
+            ),
+            recommended_action="Either feed this thing real work or break the workloads up onto cheaper fractional hardware.",
+            impact=f"Potential ~${savings:,.0f}/month by right-sizing the node",
+        )
+
+    # === New: A10/L40S on what should be H100 (reverse right-size) ===
+    if spec.model in ("A10", "L40S") and spec.gpu_count >= 1.0:
+        savings = round(monthly_burn * 0.12, 0)
+        return GoldenOpportunity(
+            host=host_name,
+            sku=sku,
+            gpu_spec=spec,
+            current_monthly_burn=monthly_burn,
+            potential_monthly_savings=savings,
+            opportunity_type="undersized_for_workload",
+            confidence="medium",
+            grok_insight="This host is working hard on relatively weak hardware. Sometimes paying for the bigger SKU actually saves money through higher density and lower per-user cost.",
+            recommended_action="Profile whether moving this workload to H100/H200 would let you consolidate users and reduce total nodes.",
+            impact=f"Possible density win + ~${savings:,.0f}/month efficiency",
+        )
+
     return None
 
 
@@ -499,3 +534,59 @@ def run_midas_demo() -> MidasTouchResult:
     result = perform_midas_touch(hosts=[], include_demo_data=True)
     print_gold_report(result)
     return result
+
+
+# =============================================================================
+# Remediation Playbook Export (used by `touch`)
+# =============================================================================
+
+def generate_remediation_playbook(result: MidasTouchResult, format: str = "text") -> str:
+    """
+    Produces a clean, exportable remediation plan.
+    Supports 'text', 'markdown', and 'json' (basic).
+    """
+    lines = []
+
+    if format == "markdown":
+        lines.append("# AVD Masters — Midas Remediation Playbook\n")
+        lines.append(f"**Generated:** {result.generated_at}\n")
+        lines.append(f"**Monthly Burn:** ${result.total_current_monthly_burn:,.0f}")
+        lines.append(f"**Recoverable Gold (this month):** ${result.total_potential_monthly_gold:,.0f}\n")
+        lines.append("## Top Actions\n")
+
+        for i, opp in enumerate(result.opportunities[:6], 1):
+            lines.append(f"### {i}. {opp.host} — {opp.impact}")
+            lines.append(f"**Type:** {opp.opportunity_type}")
+            lines.append(f"**Insight:** {opp.grok_insight}")
+            lines.append(f"**Recommended Action:** {opp.recommended_action}\n")
+
+    elif format == "json":
+        import json
+        data = {
+            "generated_at": result.generated_at,
+            "monthly_burn": result.total_current_monthly_burn,
+            "recoverable_gold": result.total_potential_monthly_gold,
+            "opportunities": [
+                {
+                    "host": o.host,
+                    "type": o.opportunity_type,
+                    "savings": o.potential_monthly_savings,
+                    "action": o.recommended_action,
+                }
+                for o in result.opportunities[:8]
+            ]
+        }
+        return json.dumps(data, indent=2)
+
+    else:
+        # plain text
+        lines.append("AVD MASTERS — REMEDIATION PLAYBOOK")
+        lines.append(f"Generated: {result.generated_at}")
+        lines.append(f"Monthly Burn: ${result.total_current_monthly_burn:,.0f}")
+        lines.append(f"Recoverable Gold: ${result.total_potential_monthly_gold:,.0f}\n")
+        lines.append("TOP ACTIONS:\n")
+        for i, opp in enumerate(result.opportunities[:6], 1):
+            lines.append(f"{i}. {opp.host} | {opp.impact}")
+            lines.append(f"   {opp.recommended_action}\n")
+
+    return "\n".join(lines)

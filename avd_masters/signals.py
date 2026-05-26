@@ -95,7 +95,7 @@ class SimulatedCollector(SignalCollector):
     def collect(self, hosts: list[str], **kwargs) -> list[HostSignal]:
         signals = []
         for i, name in enumerate(hosts):
-            # Simulate realistic painful patterns
+            # Simulate realistic painful patterns seen in real AVD GPU fleets
             if "h100" in name.lower() or "mi300" in name.lower():
                 util = 12.0 if i % 3 == 0 else (28.0 if i % 2 == 0 else 67.0)
             else:
@@ -111,6 +111,47 @@ class SimulatedCollector(SignalCollector):
         return signals
 
 
+class LocalCollector(SignalCollector):
+    """
+    Realistic pattern for direct hardware collection.
+
+    In production this would:
+    - Use WinRM / SSH to run nvidia-smi or rocm-smi
+    - Parse the output cleanly (no sampling lies)
+    - Handle fractional GPUs correctly
+    - Fall back gracefully on unreachable hosts
+
+    This stub shows the exact shape we want real collectors to follow.
+    """
+    name = "local-direct"
+
+    def collect(self, hosts: list[str], **kwargs) -> list[HostSignal]:
+        """
+        Placeholder for real local collection.
+        Replace the body with actual WinRM/SSH + smi parsing when ready.
+        """
+        # For now we return slightly better simulated data to prove the path
+        signals = []
+        for i, name in enumerate(hosts):
+            # More realistic distribution for a "mature but messy" fleet
+            if any(x in name.lower() for x in ["h100", "h200", "mi300"]):
+                util = 8.5 if i % 4 == 0 else (19.0 if i % 3 == 0 else 52.0)
+            else:
+                util = 31.0 + ((i * 11) % 48)
+
+            signals.append(HostSignal(
+                host_name=name,
+                gpu_util_avg=round(util, 1),
+                gpu_util_peak=round(min(100, util * 1.4), 1),
+                source=self.name,
+                metadata={
+                    "collector_version": "0.2-local",
+                    "note": "Replace with real nvidia-smi / rocm-smi via WinRM or SSH"
+                },
+            ))
+        return signals
+
+
 # =============================================================================
 # High-Value Local Analysis (Midas-grade)
 # =============================================================================
@@ -122,25 +163,32 @@ def analyze_for_midas(fleet: FleetSignals) -> dict[str, Any]:
     """
     waste_score = fleet.get_waste_score()
 
+    idle = [s for s in fleet.signals if s.is_likely_idle]
+    under = [s for s in fleet.signals if s.is_underutilized and not s.is_likely_idle]
+
     insights = {
         "waste_score": waste_score,
-        "idle_hosts": [s.host_name for s in fleet.signals if s.is_likely_idle],
-        "underutilized_hosts": [s.host_name for s in fleet.signals if s.is_underutilized and not s.is_likely_idle],
+        "idle_hosts": [s.host_name for s in idle],
+        "underutilized_hosts": [s.host_name for s in under],
+        "avg_util": fleet.avg_util,
         "summary": "",
     }
 
-    if waste_score > 55:
+    if waste_score > 60:
         insights["summary"] = (
-            f"Fleet is leaking badly (waste score {waste_score}). "
-            f"{fleet.idle_count} hosts are basically idle. This is the kind of thing that makes finance teams ask uncomfortable questions."
+            f"This fleet is bleeding money (waste score {waste_score}). "
+            f"{len(idle)} hosts are basically doing nothing. Someone is going to notice the bill eventually."
         )
-    elif waste_score > 30:
+    elif waste_score > 35:
         insights["summary"] = (
-            f"Noticeable waste (waste score {waste_score}). "
-            f"{fleet.underutilized_count} hosts are running well below what their hardware costs."
+            f"Clear waste (waste score {waste_score}). "
+            f"{len(under)} hosts are running well below the cost of the metal they're sitting on."
         )
     else:
-        insights["summary"] = "Fleet looks reasonably utilized. Still worth a Midas pass for right-sizing and packing opportunities."
+        insights["summary"] = (
+            f"Fleet utilization is acceptable ({fleet.avg_util}% avg). "
+            "Still run Midas — there are almost always right-sizing and packing opportunities hiding in the noise."
+        )
 
     return insights
 
@@ -169,8 +217,19 @@ def enrich_midas_opportunities(hosts: list[Any], fleet_signals: FleetSignals | N
     return enriched
 
 
-# Convenience factory
+# Convenience factories (polished)
 def get_simulated_fleet(host_names: list[str]) -> FleetSignals:
+    """Quick demo fleet with realistic painful patterns."""
     collector = SimulatedCollector()
-    signals = collector.collect(host_names)
-    return FleetSignals(signals=signals)
+    sigs = collector.collect(host_names)
+    return FleetSignals(signals=sigs)
+
+
+def get_local_collector_fleet(host_names: list[str]) -> FleetSignals:
+    """
+    Use this when you want to simulate what a real direct hardware collector would return.
+    Swap the implementation inside LocalCollector when you have WinRM/SSH + smi working.
+    """
+    collector = LocalCollector()
+    sigs = collector.collect(host_names)
+    return FleetSignals(signals=sigs, window_hours=6)  # more realistic recent window

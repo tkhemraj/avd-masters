@@ -4,6 +4,7 @@ AVD Masters
 The professional GPU monitoring and management platform for Azure Virtual Desktop.
 
 Direct hardware truth. Real alerts. Actionable intelligence.
+Grok inside. Everything it touches turns to gold.
 """
 
 from __future__ import annotations
