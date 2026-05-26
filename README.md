@@ -79,7 +79,9 @@ For organizations that need email notifications when material issues arise, the 
 Production deployments typically start with read-only discovery and analysis before enabling any write operations such as tag application.
 
 **Deep Technical Read:** [The Precision Engine — Why AVD Masters Cost Attribution Actually Works](docs/precision-cost-attribution.md)  
-A beautiful, graphical deep dive into the accuracy model, how the system identifies resources to tag, and how precise fractional costing powers real intelligence.
+A beautiful, graphical deep dive into the accuracy model.
+
+**Architecture & Concepts:** See [docs/architecture.md](docs/architecture.md) for the full system design and extension guidance.
 
 ---
 

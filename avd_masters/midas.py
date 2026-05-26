@@ -32,22 +32,57 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GoldenOpportunity:
-    """A single piece of gold waiting to be touched."""
-    host: str
-    sku: str
-    gpu_spec: GpuSpec
-    current_monthly_burn: float
-    potential_monthly_savings: float
-    opportunity_type: str          # "rightsize", "rebalance", "idle", "wrong_family", "fractional_waste", etc.
-    confidence: str                # "high", "medium", "speculative"
-    grok_insight: str              # The witty, direct, useful explanation
-    recommended_action: str
-    impact: str                    # Human readable ("Saves ~$2,840/month")
+    """
+    A single, actionable, quantified opportunity to improve cost or user experience.
+
+    This is the atomic output of the Midas intelligence engine. Every `GoldenOpportunity`
+    represents something real that a human (or automated system) can act on, with clear
+    financial or experience impact attached.
+
+    Attributes
+    ----------
+    host : str
+        Name of the affected session host or group.
+    sku : str
+        The Azure VM size (e.g. Standard_NC32ads_H100_v5).
+    gpu_spec : GpuSpec
+        Precise hardware profile of the SKU (including fractional allocation).
+    current_monthly_burn : float
+        Estimated monthly cost attributable to the GPUs on this host/allocation.
+    potential_monthly_savings : float
+        How much could realistically be recovered or avoided.
+    opportunity_type : str
+        Classification of the opportunity (e.g. "high_end_underutilized",
+        "fractional_on_premium", "bad_experience_on_expensive_hardware", "dense_packing").
+    confidence : str
+        "high", "medium", or "speculative".
+    grok_insight : str
+        Direct, human-readable explanation with personality.
+    recommended_action : str
+        Concrete next step.
+    impact : str
+        Human-friendly summary (e.g. "Saves ~$2,840/month").
+    """
 
 
 @dataclass
 class MidasTouchResult:
-    """The full output of a Midas Touch run. This is the gold."""
+    """
+    The complete, self-contained output of a Midas intelligence run.
+
+    This is the primary "gold report" object returned by `perform_midas_touch()`.
+    It is designed to be immediately useful for humans (executives, architects, FinOps)
+    while also being machine-readable for automation.
+
+    It contains:
+    - Aggregated financial summary
+    - Ranked list of `GoldenOpportunity` objects
+    - Narrative sections ("brutal truth", surprise insights)
+    - Derived properties for convenience
+
+    This object is what powers the beautiful `midas` CLI output and can be used
+    programmatically or serialized.
+    """
     generated_at: str
     total_hosts_analyzed: int
     total_current_monthly_burn: float
@@ -61,10 +96,12 @@ class MidasTouchResult:
 
     @property
     def annual_gold_potential(self) -> float:
+        """Annualized recoverable value."""
         return round(self.total_potential_monthly_gold * 12, 0)
 
     @property
     def savings_percentage(self) -> float:
+        """Percentage of current burn that could be recovered."""
         if self.total_current_monthly_burn <= 0:
             return 0.0
         return round((self.total_potential_monthly_gold / self.total_current_monthly_burn) * 100, 1)

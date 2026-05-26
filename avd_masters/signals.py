@@ -25,13 +25,72 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HostSignal:
     """
-    A single point-in-time or aggregated signal for one session host.
+    The fundamental data unit in AVD Masters.
 
-    This is the core data model for everything that matters:
-    - Utilization (cost & waste)
-    - Performance / Latency (user experience)
-    - Health signals
+    A HostSignal represents a snapshot (or aggregated window) of everything that matters
+    about a single AVD GPU session host — both from a cost/waste perspective and from
+    a user experience perspective.
+
+    This single model powers:
+    - Cost attribution and Azure tagging
+    - Midas intelligence (savings opportunities)
+    - User Experience analysis (latency, frame times, "feels bad" detection)
+    - Governance and CMMC reporting
+    - Alerting
+
+    Attributes
+    ----------
+    host_name : str
+        Name of the session host.
+    gpu_util_avg : float
+        Average GPU utilization (0-100) over the collection window.
+    gpu_util_peak : float, optional
+        Peak utilization observed.
+    memory_util_avg : float, optional
+        Average GPU memory utilization.
+    gpu_seconds_in_window : float
+        Total GPU-seconds consumed in the window (used for consumption-based costing).
+
+    Performance & Latency Fields (new in 2026)
+    ------------------------------------------
+    These fields allow AVD Masters to treat user experience as a first-class concern,
+    not an afterthought.
+
+    avg_frame_time_ms : float, optional
+        Average time to render a frame on the GPU.
+    p95_frame_time_ms : float, optional
+        95th percentile frame time. This is the most important signal for perceived
+        "jank" and stuttering. Values > ~33ms usually feel bad to users.
+    input_latency_ms : float, optional
+        End-to-end input-to-photon latency (ideal target is usually < 50-80ms for
+        good interactive feel on graphics workloads).
+    network_latency_ms : float, optional
+        Network round-trip / protocol latency component.
+    encoding_latency_ms : float, optional
+        Time spent in GPU video encoding (relevant for certain AVD scenarios).
+
+    Other Fields
+    ------------
+    timestamp : str
+        ISO timestamp of the measurement.
+    source : str
+        Where the data came from (e.g. "local-direct", "simulated", "azure-metrics").
+    metadata : dict
+        Free-form additional context from the collector.
+
+    Examples
+    --------
+    >>> signal = HostSignal(
+    ...     host_name="avd-gpu-03",
+    ...     gpu_util_avg=67.3,
+    ...     p95_frame_time_ms=48.2,
+    ...     input_latency_ms=112.0,
+    ...     source="local-direct"
+    ... )
+    >>> signal.has_poor_experience
+    True
     """
+
     host_name: str
     gpu_util_avg: float          # 0-100
     gpu_util_peak: float | None = None
