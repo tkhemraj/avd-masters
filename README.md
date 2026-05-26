@@ -102,6 +102,7 @@ python run.py forecast        # Predictive cost forecasting demo
 - **Useful over pretty** — Alerts and recommendations that help you manage.
 - **Low cost by default** — No forced expensive Azure services.
 - **Enterprise ready** — Built with FinOps, governance, and large-scale operations in mind.
+- **CMMC 2.0 aware** — Governance layer aligned with the U.S. DoD Cybersecurity Maturity Model Certification (NIST 800-171) because a large portion of serious AVD GPU workloads live in the defense contractor and federal ecosystem.
 
 ---
 
@@ -111,7 +112,7 @@ We are actively building real, usable management capabilities:
 
 - Midas Touch intelligence (the signature "everything it touches turns to gold" experience)
 - Real utilization signals layer for accurate idle/waste detection
-- Governance + Fleet Health + cross-sub visibility
+- Governance + Fleet Health + cross-sub visibility, with explicit CMMC 2.0 alignment (see `governance.py` for the rationale)
 - One-command `touch` that does discovery → analysis → tagging → playbooks
 - Strong CLI with Grok-grade direct, high-signal output
 

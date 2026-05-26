@@ -3,9 +3,34 @@ AVD Masters — Governance & Policy Engine
 
 Real governance for expensive GPU fleets. Not theater.
 
-Capabilities:
+Why CMMC 2.0?
+
+CMMC 2.0 (Cybersecurity Maturity Model Certification) is the current U.S. Department
+of Defense standard for protecting Controlled Unclassified Information (CUI) across
+the Defense Industrial Base and federal contractor ecosystem.
+
+We chose to align the governance layer with CMMC 2.0 for several practical reasons:
+
+- A significant and growing number of organizations running high-end AVD GPU workloads
+  (H100, H200, MI300X, L40S clusters, etc.) are defense contractors, aerospace companies,
+  intelligence community partners, or federal systems integrators. These organizations
+  are contractually required to achieve CMMC 2.0 (typically Level 2) to handle CUI.
+
+- Instead of inventing yet another generic "governance framework", we aligned with a
+  real, widely recognized, and auditable U.S. government framework that already carries
+  legal and contractual weight.
+
+- AVD Masters has strong natural capabilities in exactly the areas CMMC cares about:
+  configuration management (dynamic SKU discovery vs baselines), risk assessment
+  (quantified dollar risk), audit & accountability (rich auto-tagging + playbooks),
+  program management (fleet health, cross-sub rollups), and system integrity (signals).
+
+- This gives customers in the U.S. defense and federal space concrete, machine-generated
+  evidence they can actually use during CMMC assessments — not marketing slides.
+
+What we cover:
 - Fleet Health Score (the single number leadership actually understands)
-- CMMC 2.0 alignment (US DoD / NIST 800-171 relevant domains)
+- CMMC 2.0 alignment across the most relevant domains (AC, AU, CM, IR, PM, RA, SI)
 - Cross-subscription / multi-RG rollups
 - Policy evaluation + Midas-grade, dollar-risk violation reporting
 
@@ -353,6 +378,8 @@ def print_cmmc_governance_report(coverage: list[CMMCControlCoverage]) -> None:
         print()
 
     print("  This tool gives you real, defensible artifacts for the domains above.")
+    print("  We chose CMMC 2.0 because it is the actual standard that applies to most U.S.")
+    print("  organizations running serious GPU workloads under federal contracts today.")
     print("  It is not a silver bullet for full CMMC certification.")
     print("  Use the output of `touch` and the exported playbooks as part of your evidence package.")
     print("═" * 78 + "\n")
