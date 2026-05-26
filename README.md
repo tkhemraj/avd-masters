@@ -126,7 +126,14 @@ We're building this in public with high standards.
 - Chargeback / showback reporting
 - Lightweight Azure integration (Event Grid, Logic Apps, etc.)
 
-See [FEATURES.md](FEATURES.md) for details.
+**Mega Features** (next level ambition):
+- Predictive Cost Forecasting
+- Intelligent Workload Placement Optimizer
+- Automated Remediation Playbooks
+- Carbon & Sustainability Intelligence
+- Cross-Subscription Command Center
+
+See [MEGA-FEATURES.md](MEGA-FEATURES.md) for the full vision.
 
 ---
 
