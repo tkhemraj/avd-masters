@@ -1,0 +1,4 @@
+# GitHub Pages configuration for GROKY docs
+title: GROKY 2.0
+description: The premium agentless GPU monitor for Azure Virtual Desktop
+theme: jekyll-theme-cayman
