@@ -327,6 +327,22 @@ def _score_opportunity(host_name: str, spec: GpuSpec, sku: str, region: str) -> 
     return None
 
 
+def analyze_bpa_findings_as_opportunities(bpa_checks: list[toolkit.BPACheck]) -> list[dict]:
+    """Convert BPA findings into Midas-style opportunities."""
+    opps = []
+    for check in bpa_checks:
+        if check.passed:
+            continue
+        opps.append({
+            "type": f"bpa_{check.id.lower()}",
+            "title": check.title,
+            "impact": check.details,
+            "recommended_action": check.recommendation,
+            "category": check.category,
+        })
+    return opps
+
+
 # =============================================================================
 # The Midas Touch — Main Entry Point
 # =============================================================================
