@@ -57,8 +57,10 @@ def cmd_status():
     print("  discover  | alerts | cost | forecast\n")
 
 
-def cmd_alerts():
+def cmd_alerts(email: bool = False):
     print("Running management session with live alerting...\n")
+    if email:
+        print("Email notifications enabled for this run (if AVD_ALERT_EMAIL_ENABLED=true).")
     manage_demo.main()
 
 
@@ -139,26 +141,26 @@ def cmd_touch(apply_tags: bool = False):
     print("Phase 2: Midas Intelligence + Governance + CMMC 2.0 Alignment")
     try:
         if hosts:
-            # Using the more realistic LocalCollector pattern for better signal simulation
             host_names = [getattr(h, 'name', str(h)) for h in hosts[:10]]
             fleet_signals = signals.get_local_collector_fleet(host_names)
 
             result = midas.perform_midas_touch(hosts, include_demo_data=False, fleet_signals=fleet_signals)
             midas.print_gold_report(result)
 
-            # Governance layer (cross-sub health + policy)
             health = governance.calculate_fleet_health(hosts, monthly_burn=result.total_current_monthly_burn)
             violations = governance.evaluate_policies(hosts)
             governance.print_governance_report(health, violations)
 
-            # CMMC 2.0 Governance Alignment (US-focused framework)
             cmmc_coverage = governance.assess_cmmc_governance(hosts, fleet_health=health)
             governance.print_cmmc_governance_report(cmmc_coverage)
+
+            # Fire email if things are properly funky
+            midas.maybe_send_midas_funky_email(result)
+            governance.maybe_send_cmmc_funky_email(health, cmmc_coverage)
         else:
             result = midas.perform_midas_touch([], include_demo_data=True)
             midas.print_gold_report(result)
 
-            # Still show CMMC value even in demo mode
             cmmc_demo = governance.assess_cmmc_governance([])
             governance.print_cmmc_governance_report(cmmc_demo)
     except Exception as e:
@@ -233,7 +235,8 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("status", help="Show catalog and basic status")
-    subparsers.add_parser("alerts", help="Run full management + alerting demo")
+    alerts_parser = subparsers.add_parser("alerts", help="Run full management + alerting demo")
+    alerts_parser.add_argument("--email", action="store_true", help="Also attempt to send email alerts for fired rules")
     subparsers.add_parser("cost", help="Run FinOps cost attribution demo")
     subparsers.add_parser("forecast", help="Show predictive forecasting demo")
     subparsers.add_parser("discover", help="Run discovery + dynamic SKU refresh + auto-tagging")
@@ -244,7 +247,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "alerts":
-        cmd_alerts()
+        cmd_alerts(email=getattr(args, "email", False))
     elif args.command == "cost":
         cmd_cost()
     elif args.command == "forecast":

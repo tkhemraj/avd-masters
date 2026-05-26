@@ -42,6 +42,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from avd_masters import alerting
+
 
 @dataclass
 class PolicyViolation:
@@ -216,6 +218,32 @@ def print_subscription_rollups(rollups: list[SubscriptionRollup]) -> None:
         print(f"  {r.subscription_id[:12]}... | {r.host_count} hosts | "
               f"${r.monthly_burn:,.0f}/mo | Health {r.health_score} | "
               f"~${r.gold_potential:,.0f} gold")
+
+
+def maybe_send_cmmc_funky_email(health: FleetHealth, coverage: list[CMMCControlCoverage]) -> bool:
+    """Email when CMMC governance posture looks weak."""
+    score = get_cmmc_governance_score(coverage)
+    if score > 75:
+        return False
+
+    details = [f"CMMC Governance Maturity: {score}/100"]
+    for item in coverage:
+        if item.coverage in ("partial", "emerging"):
+            details.append(f"{item.domain} ({item.control_family}): only {item.coverage}")
+
+    recs = [
+        "Run `python run.py touch` to generate fresh evidence.",
+        "Focus on closing the gaps listed in the CMMC report.",
+        "Feed real utilization signals to strengthen SI and IR coverage.",
+    ]
+
+    return alerting.send_funky_gpu_email(
+        title="CMMC 2.0 Governance Posture Needs Attention",
+        summary=f"Your GPU fleet's CMMC-relevant governance score is only {score}/100.",
+        details=details,
+        recommendations=recs,
+        impact="This is the kind of thing that shows up in audits and contract reviews.",
+    )
 
 
 # =============================================================================

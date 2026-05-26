@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from avd_masters import catalog, cost, signals
+from avd_masters import alerting, catalog, cost, signals
 from avd_masters.catalog import GpuSpec
 
 logger = logging.getLogger(__name__)
@@ -526,6 +526,37 @@ def estimate_carbon_kg_per_month(spec: GpuSpec, region: str = "eastus", hours_pe
     allocated_kw = (power * spec.gpu_count) / 1000.0
     kwh = allocated_kw * hours_per_month
     return round(kwh * intensity, 1)
+
+
+# =============================================================================
+# Email Integration for "Shit Gets Funky" Moments
+# =============================================================================
+
+def maybe_send_midas_funky_email(result: MidasTouchResult) -> bool:
+    """
+    If waste looks bad or there's serious gold on the table, fire a proper email.
+    Controlled by AVD_ALERT_EMAIL_ENABLED.
+    """
+    if result.total_potential_monthly_gold < 2000 and result.savings_percentage < 25:
+        return False  # Not funky enough to bother people
+
+    details = [
+        f"Monthly burn: ${result.total_current_monthly_burn:,.0f}",
+        f"Recoverable gold this month: ${result.total_potential_monthly_gold:,.0f} ({result.savings_percentage}%)",
+        f"Annualized opportunity: ${result.annual_gold_potential:,.0f}",
+    ]
+    for opp in result.opportunities[:3]:
+        details.append(f"{opp.host}: {opp.impact}")
+
+    recs = [opp.recommended_action for opp in result.opportunities[:3]]
+
+    return alerting.send_funky_gpu_email(
+        title="Significant GPU Waste Detected",
+        summary=result.brutal_truth,
+        details=details,
+        recommendations=recs,
+        impact=f"${result.total_potential_monthly_gold:,.0f}/month is on the table. Go touch it.",
+    )
 
 
 # Convenience for the CLI

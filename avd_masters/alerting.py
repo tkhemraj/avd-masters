@@ -6,13 +6,15 @@ This is the practical heart that turns AVD Masters from "pretty monitoring" into
 Core responsibilities:
 - Evaluate current state against rules
 - Fire meaningful alerts with context and recommended actions
-- Tie into cost, forecasting, and optimizer modules
+- Tie into cost, forecasting, Midas, Signals, and Governance
 - Be actionable (not just "utilization is high")
+- Notify humans when shit gets funky (email supported)
 
 Design goals:
 - Simple to extend with new rules
 - Rich context (cost impact, recommendations, etc.)
-- Multiple output formats (console, JSON, webhooks later)
+- Multiple output formats (console, email, JSON, webhooks later)
+- "Yum factor": professional, clear, slightly spicy Grok voice in notifications
 """
 
 from __future__ import annotations
@@ -241,3 +243,134 @@ def create_default_alert_engine() -> AlertEngine:
     engine.add_rule(rule_severe_imbalance)
     engine.add_rule(rule_forecast_overrun)
     return engine
+
+
+# =============================================================================
+# Email Notifications (when shit gets funky)
+# =============================================================================
+
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+
+def get_email_config() -> dict:
+    """Pull email settings from environment (never hardcode secrets)."""
+    return {
+        "enabled": os.getenv("AVD_ALERT_EMAIL_ENABLED", "false").lower() == "true",
+        "smtp_host": os.getenv("AVD_ALERT_SMTP_HOST", "localhost"),
+        "smtp_port": int(os.getenv("AVD_ALERT_SMTP_PORT", "587")),
+        "smtp_user": os.getenv("AVD_ALERT_SMTP_USER", ""),
+        "smtp_pass": os.getenv("AVD_ALERT_SMTP_PASS", ""),
+        "from_addr": os.getenv("AVD_ALERT_FROM", "avd-masters@yourcompany.com"),
+        "to_addrs": os.getenv("AVD_ALERT_TO", "").split(",") if os.getenv("AVD_ALERT_TO") else [],
+        "use_tls": os.getenv("AVD_ALERT_SMTP_TLS", "true").lower() == "true",
+    }
+
+
+def send_email_alert(
+    subject: str,
+    body_text: str,
+    body_html: str | None = None,
+    config: dict | None = None,
+) -> bool:
+    """
+    Send a nicely formatted email alert.
+
+    Returns True if sent successfully (or if email is disabled).
+    """
+    cfg = config or get_email_config()
+
+    if not cfg["enabled"]:
+        print("[Alert] Email disabled via AVD_ALERT_EMAIL_ENABLED=false")
+        return False
+
+    if not cfg["to_addrs"]:
+        print("[Alert] No AVD_ALERT_TO configured. Skipping email.")
+        return False
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = cfg["from_addr"]
+        msg["To"] = ", ".join(cfg["to_addrs"])
+
+        msg.attach(MIMEText(body_text, "plain"))
+
+        if body_html:
+            msg.attach(MIMEText(body_html, "html"))
+
+        with smtplib.SMTP(cfg["smtp_host"], cfg["smtp_port"]) as server:
+            if cfg["use_tls"]:
+                server.starttls()
+            if cfg["smtp_user"]:
+                server.login(cfg["smtp_user"], cfg["smtp_pass"])
+            server.sendmail(cfg["from_addr"], cfg["to_addrs"], msg.as_string())
+
+        print(f"[Alert] Email sent: {subject}")
+        return True
+
+    except Exception as e:
+        print(f"[Alert] Failed to send email: {e}")
+        return False
+
+
+def send_funky_gpu_email(
+    title: str,
+    summary: str,
+    details: list[str],
+    recommendations: list[str],
+    impact: str | None = None,
+    config: dict | None = None,
+) -> bool:
+    """
+    Send a high-signal "shit is getting funky" email.
+
+    This is the one you actually want in your inbox at 2am.
+    """
+    cfg = config or get_email_config()
+
+    text_lines = [
+        f"AVD MASTERS — FUNKY GPU SITUATION",
+        f"Title: {title}",
+        "",
+        "SUMMARY:",
+        summary,
+        "",
+        "DETAILS:",
+    ]
+    for d in details:
+        text_lines.append(f"• {d}")
+    text_lines.append("")
+    text_lines.append("RECOMMENDED ACTIONS:")
+    for r in recommendations:
+        text_lines.append(f"→ {r}")
+    if impact:
+        text_lines.append("")
+        text_lines.append(f"IMPACT: {impact}")
+
+    text_body = "\n".join(text_lines)
+
+    html_body = f"""
+    <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5;">
+        <h2 style="color: #c00;">AVD Masters — Funky GPU Situation</h2>
+        <h3>{title}</h3>
+        <p><strong>Summary:</strong> {summary}</p>
+        <h4>Details</h4>
+        <ul>
+          {''.join(f'<li>{d}</li>' for d in details)}
+        </ul>
+        <h4>Recommended Actions</h4>
+        <ul>
+          {''.join(f'<li>{r}</li>' for r in recommendations)}
+        </ul>
+        {f'<p><strong>Impact:</strong> {impact}</p>' if impact else ''}
+        <p style="color: #666; font-size: 0.9em;">Generated by AVD Masters. Go touch the gold.</p>
+      </body>
+    </html>
+    """
+
+    subject = f"[AVD Masters] {title}"
+    return send_email_alert(subject, text_body, html_body, cfg)
