@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AVD Masters Suite — Unified VDI Monitoring</title>
+  <meta name="description" content="Open-source Python monitoring suite for Azure Virtual Desktop, RDS Terminal Services, and Citrix VDI. Live TUI dashboard, Prometheus exporter, Grafana dashboards, Alertmanager Teams notifications, best-practice analysis, and GPU/vGPU slice ROI monitoring.">
+  <meta property="og:title" content="AVD Masters Suite">
+  <meta property="og:description" content="Unified monitoring for Azure Virtual Desktop, RDS, and Citrix VDI — including GPU/vGPU slice analysis.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://avdmasters.github.io">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">avd<span>masters</span>.suite</span>
+    <ul class="nav-links">
+      <li><a href="#platforms">Platforms</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#gpu">GPU Analysis</a></li>
+      <li><a href="#metrics">Metrics</a></li>
+      <li><a href="#alerts">Alerts</a></li>
+      <li><a href="#quickstart">Quick Start</a></li>
+      <li><a href="#reference">Reference</a></li>
+    </ul>
+    <a href="https://github.com/avdmasters/avd-masters" class="nav-github">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-eyebrow">
+      <span>●</span> Python 3.11+ · Open Source · MIT Licence
+    </div>
+    <h1 class="hero-title">AVD Masters Suite</h1>
+    <p class="hero-sub">
+      Unified monitoring, GPU slice ROI analysis, and best-practice compliance for
+      <strong style="color:#58a6ff">Azure Virtual Desktop</strong>,
+      <strong style="color:#bc8cff">RDS Terminal Services</strong>, and
+      <strong style="color:#e3b341">Citrix VDI</strong> — from a single Python process.
+    </p>
+    <div class="hero-actions">
+      <a href="#quickstart" class="btn btn-primary">Get Started →</a>
+      <a href="https://github.com/avdmasters/avd-masters" class="btn btn-secondary">View on GitHub</a>
+      <a href="#metrics" class="btn btn-secondary">Metrics Reference</a>
+    </div>
+    <div class="badges">
+      <span class="badge">python ≥ 3.11</span>
+      <span class="badge">prometheus exporter</span>
+      <span class="badge">grafana dashboard</span>
+      <span class="badge">alertmanager teams</span>
+      <span class="badge">nvidia vgpu</span>
+      <span class="badge">docker ready</span>
+    </div>
+
+    <!-- Terminal demo -->
+    <div class="terminal-wrap">
+      <div class="terminal-bar">
+        <div class="tbar-dot red"></div>
+        <div class="tbar-dot yellow"></div>
+        <div class="tbar-dot green"></div>
+        <span class="tbar-title">avd-masters — live dashboard</span>
+      </div>
+      <div class="terminal-body"><span class="t-blue t-bold">╭─────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span class="t-blue t-bold">│</span> <span class="t-white t-bold">AVD MASTERS SUITE</span>  <span class="t-yellow t-bold">▲ WARNING</span>  <span class="t-dim">[2026-05-29 22:27:40 UTC]</span>                                <span class="t-blue t-bold">│</span>
+<span class="t-blue t-bold">│</span> <span class="t-white">AVD: </span><span class="t-yellow t-bold">▲ WARNING</span>  <span class="t-dim">|</span>  <span class="t-white">RDS: </span><span class="t-yellow t-bold">▲ WARNING</span>  <span class="t-dim">|</span>  <span class="t-white">Citrix: </span><span class="t-yellow t-bold">▲ WARNING</span>                          <span class="t-blue t-bold">│</span>
+<span class="t-blue t-bold">╰─────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span class="t-dim">╭── </span><span class="t-cyan t-bold">Azure Virtual Desktop </span><span class="t-yellow t-bold">▲ WARNING</span><span class="t-dim"> ──╮  ╭── </span><span class="t-mag t-bold">Terminal Services </span><span class="t-yellow t-bold">▲ WARNING</span><span class="t-dim"> ──╮</span>
+<span class="t-dim">│</span> <span class="t-cyan">Host Pool             Status      Sessions  Avail</span> <span class="t-dim">│  │</span> <span class="t-mag">Host              Status   Active  CPU%   Mem%</span>  <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-white t-bold">hp-prod-pool-01</span>  <span class="t-green t-bold">    ● OK    </span>   <span class="t-green">42</span><span class="t-dim">/</span><span class="t-yellow">5</span>    2   <span class="t-dim">│  │</span> <span class="t-white t-bold">rdsh01.corp.local</span> <span class="t-green t-bold">  ● OK   </span>  22    <span class="t-green">58.4%</span>  <span class="t-green">72.1%</span> <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-white t-bold">hp-dev-pool-01</span>   <span class="t-yellow t-bold">  ▲ WARNING  </span>   <span class="t-green">3</span><span class="t-dim">/</span><span class="t-yellow">1</span>    1   <span class="t-dim">│  │</span> <span class="t-white t-bold">rdsh02.corp.local</span> <span class="t-yellow t-bold">▲ WARNING</span>  28    <span class="t-yellow t-bold">88.3%</span>  <span class="t-yellow t-bold">91.4%</span> <span class="t-dim">│</span>
+<span class="t-dim">│</span>                                                 <span class="t-dim">│  │</span> <span class="t-white t-bold">rdsh03.corp.local</span> <span class="t-dim">○ OFFLINE</span>   0     <span class="t-dim">N/A</span>    <span class="t-dim">N/A</span>   <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-dim">avdhost-prod-01  </span><span class="t-green">    ● OK     </span>  14  <span class="t-green"> 45.2%</span>  <span class="t-green">67.8%</span> <span class="t-dim">│  │</span> <span class="t-dim">Brokers: </span>rdbroker01 <span class="t-green t-bold">● OK</span>                       <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-dim">avdhost-prod-02  </span><span class="t-green">    ● OK     </span>  16  <span class="t-yellow"> 78.1%</span>  <span class="t-green">82.3%</span> <span class="t-dim">│</span>  <span class="t-dim">╰── 50 active · </span><span class="t-yellow t-bold">83/100 CALs (83%)</span><span class="t-dim"> | 22:27 ───╯</span>
+<span class="t-dim">│</span> <span class="t-dim">avdhost-prod-03  </span><span class="t-yellow">  ▲ WARNING  </span>  12  <span class="t-red t-bold"> 91.4%</span>  <span class="t-yellow">89.0%</span> <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-dim">avdhost-dev-01   </span><span class="t-red t-bold">  ✖ CRITICAL  </span>   0   <span class="t-dim">N/A</span>    <span class="t-dim">N/A</span>  <span class="t-dim">│  </span><span class="t-dim">╭── </span><span class="t-yellow t-bold">Citrix VDI </span><span class="t-yellow t-bold">▲ WARNING</span><span class="t-dim"> ──────────────────╮</span>
+<span class="t-dim">╰── 3 total sessions | 22:27:40 UTC ─────────╯  │</span> <span class="t-yellow">DG-Desktop-Win11</span>  <span class="t-green t-bold">● OK   </span>  20  <span class="t-green">20</span><span class="t-dim">/20</span>    15 <span class="t-dim">│</span>
+                                               <span class="t-dim">│</span> <span class="t-yellow">DG-Apps-Office  </span>  <span class="t-yellow t-bold">▲ WARNING</span>  10   <span class="t-red">8</span><span class="t-dim">/10</span>    24 <span class="t-dim">│</span>
+                                               <span class="t-dim">│</span> Controllers: ddc01 <span class="t-green t-bold">● OK</span>  ddc02 <span class="t-green t-bold">● OK</span>         <span class="t-dim">│</span>
+                                               <span class="t-dim">╰── 39 active sessions | 22:27:40 UTC ─────╯</span>
+<span class="t-dim">╭── GPU / vGPU Slices ─────────────────────────────────────────────────────────────────╮</span>
+<span class="t-dim">│</span> <span class="t-white">Host               GPU           Platform  SM Util        VRAM           Enc    Slices</span> <span class="t-dim">│</span>
+<span class="t-dim">│</span> avdhost-prod-01    <span class="t-white">NVIDIA A16</span>   <span class="t-cyan">AVD</span>  <span class="t-yellow t-bold">███████░░░ 71.0%</span>  <span class="t-yellow t-bold">███████░░░ 78.1%</span>  <span class="t-green">42%</span>    4   <span class="t-dim">│</span>
+<span class="t-dim">│</span> rdsh01.corp.local  <span class="t-white">NVIDIA T4</span>    <span class="t-mag">RDS</span>  <span class="t-green">█████░░░░░ 55.0%</span>  <span class="t-green">█████░░░░░ 50.0%</span>  <span class="t-green">38%</span>    4   <span class="t-dim">│</span>
+<span class="t-dim">│</span>                                                                                      <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-dim">VM            Profile       Type        FB Used          SM%   Enc   Status</span>         <span class="t-dim">│</span>
+<span class="t-dim">│</span> avd-vm-bob    GRID A16-4Q   Quadro vDWS  <span class="t-red t-bold">█████████░ 94%</span>   <span class="t-red t-bold">91%</span>   <span class="t-red t-bold">88%</span>  <span class="t-red t-bold">SATURATED</span>     <span class="t-dim">│</span>
+<span class="t-dim">│</span> avd-vm-carol  GRID A16-4Q   Quadro vDWS  <span class="t-dim">░░░░░░░░░░  7.6%</span>   <span class="t-dim"> 3%</span>    <span class="t-dim"> 4%</span>  <span class="t-dim">IDLE</span>          <span class="t-dim">│</span>
+<span class="t-dim">│</span> rdsh-s-102    GRID T4-4Q    Quadro vDWS  <span class="t-green">█░░░░░░░░░ 11.7%</span>  <span class="t-green"> 6%</span>    <span class="t-green"> 8%</span>  <span class="t-green">OK</span>            <span class="t-dim">│</span>
+<span class="t-dim">╰── 3 GPU host(s) · 11 vGPU slices · 56GB VRAM | 22:27:40 UTC ───────────────────────╯</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Platforms ── -->
+<section id="platforms" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Coverage</p>
+    <h2 class="section-title">Three platforms. One command.</h2>
+    <p class="section-sub">Each collector is independently configurable. Run monitoring for one platform, two, or all three simultaneously.</p>
+    <div class="platform-grid">
+      <div class="platform-card avd">
+        <div class="platform-icon">☁️</div>
+        <h3>Azure Virtual Desktop</h3>
+        <p>Monitors host pools, session hosts, and user sessions via the Azure SDK and Azure Monitor.</p>
+        <ul class="tag-list">
+          <li class="tag">Host pool status</li>
+          <li class="tag">Session host agent version</li>
+          <li class="tag">Active / disconnected sessions</li>
+          <li class="tag">CPU / memory per host</li>
+          <li class="tag">Available hosts for new sessions</li>
+          <li class="tag">Scaling plan awareness</li>
+          <li class="tag">DefaultAzureCredential auth</li>
+          <li class="tag">Multi-subscription</li>
+        </ul>
+      </div>
+      <div class="platform-card rds">
+        <div class="platform-icon">🖥️</div>
+        <h3>Terminal Services (RDS)</h3>
+        <p>Queries on-premises RDSH farms over WinRM using NTLM/Kerberos — no agent required.</p>
+        <ul class="tag-list">
+          <li class="tag">Session host CPU / mem / disk</li>
+          <li class="tag">Active &amp; disconnected sessions</li>
+          <li class="tag">RD Connection Broker HA status</li>
+          <li class="tag">CAL utilisation (warn/critical)</li>
+          <li class="tag">Host uptime / reboot hygiene</li>
+          <li class="tag">WinRM NTLM or Kerberos</li>
+          <li class="tag">WMI / Get-CimInstance</li>
+          <li class="tag">PowerShell remoting</li>
+        </ul>
+      </div>
+      <div class="platform-card citrix">
+        <div class="platform-icon">🟡</div>
+        <h3>Citrix VDI (CVAD)</h3>
+        <p>Uses the Citrix Director OData v3 REST API, or falls back to WinRM + Broker PowerShell SDK.</p>
+        <ul class="tag-list">
+          <li class="tag">Delivery group status</li>
+          <li class="tag">Registered vs total VDAs</li>
+          <li class="tag">Active / disconnected sessions</li>
+          <li class="tag">Delivery Controller health</li>
+          <li class="tag">VDA registration state</li>
+          <li class="tag">Fault state detection</li>
+          <li class="tag">OData API or WinRM fallback</li>
+          <li class="tag">Session re-auth on 401</li>
+        </ul>
+      </div>
+      <div class="platform-card gpu">
+        <div class="platform-icon">⚡</div>
+        <h3>GPU / vGPU Slices</h3>
+        <p>Per-slice frame buffer, SM utilisation, encoder saturation, and licence ROI analysis via nvidia-smi over WinRM.</p>
+        <ul class="tag-list">
+          <li class="tag">NVIDIA vGPU B/Q/C/A profiles</li>
+          <li class="tag">Per-slice FB used / allocated</li>
+          <li class="tag">SM &amp; encoder utilisation</li>
+          <li class="tag">Saturated / idle / OK badges</li>
+          <li class="tag">Q-profile licence waste detection</li>
+          <li class="tag">Slice packing efficiency</li>
+          <li class="tag">GPU temp &amp; power draw</li>
+          <li class="tag">Per-process GPU attribution</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Capabilities</p>
+    <h2 class="section-title">Everything wired up out of the box</h2>
+    <p class="section-sub">No separate agents, no SaaS dependency, no vendor lock-in.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>Live TUI Dashboard</h3>
+        <p>Full-screen Rich terminal dashboard with live refresh. Three platform panels plus GPU slice panel. Runs anywhere with a terminal — SSH, bastion, local. <code>python -m avd_masters</code></p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Prometheus Exporter</h3>
+        <p>73+ metric samples per scrape across all platforms. Dedicated vGPU slice metrics per instance. Custom registry — won't collide with your app metrics. Binds to <code>127.0.0.1:9090</code> by default.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Grafana Dashboard</h3>
+        <p>25-panel importable JSON dashboard. Status columns with colour-mapped value thresholds. Time series for CPU/memory/sessions, gauge for CAL utilisation, bar gauge for unregistered VDAs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Alertmanager + Teams</h3>
+        <p>29 firing rules across 4 groups. Native <code>msteams_configs</code> (Alertmanager 0.27+). 9 inhibition rules prevent alert storms. Separate critical / warning / meta channels.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Best-Practice Analysis</h3>
+        <p>21 checks across AVD, RDS, and Citrix. HA, capacity, performance, version currency, hygiene, licensing. Scored report (0–100 per platform). <code>--analyze</code> exits 2 on CRITICAL — CI-friendly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>GPU / vGPU ROI Analysis</h3>
+        <p>Flags saturated slices (need bigger profile), idle slices (wasting FB), Q-profile licences on Office users, encoder bottlenecks, and low slice packing efficiency.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Security-First Design</h3>
+        <p>WinRM defaults to HTTPS (port 5986). <code>${ENV_VAR}</code> substitution in config — no passwords in YAML. Credentials redacted from all error messages, logs, and notifier payloads. Config file permission check on startup.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🐳</div>
+        <h3>Docker / Container Ready</h3>
+        <p>Included <code>Dockerfile</code> (python:3.12-slim, non-root) and <code>docker-compose.yml</code> with Prometheus + Alertmanager stack. Azure credentials via env vars. <code>--exporter-only</code> mode for sidecar deployments.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── GPU Analysis ── -->
+<section id="gpu" class="section">
+  <div class="container">
+    <p class="section-eyebrow">GPU Intelligence</p>
+    <h2 class="section-title">The vGPU analysis Citrix Director doesn't show you</h2>
+    <p class="section-sub">Every vGPU slice queried live via <code>nvidia-smi</code> over WinRM. Frame buffer, SM utilisation, encoder saturation, and licence-cost analysis — across AVD, RDS, and Citrix simultaneously.</p>
+
+    <div class="profile-grid mt-8">
+      <div class="profile-card type-b">
+        <div class="profile-type">B</div>
+        <div class="profile-label">GRID vPC — Virtual PC</div>
+        <p>Knowledge workers, Office 365, browser, light 2D. 1–4GB profiles. Lowest per-user licence cost.</p>
+        <span class="profile-cost cost-low">GRID vPC licence</span>
+      </div>
+      <div class="profile-card type-q">
+        <div class="profile-type">Q</div>
+        <div class="profile-label">Quadro vDWS — Virtual Workstation</div>
+        <p>CAD, BIM, 3D modelling, professional visualisation. 4–16GB profiles. Highest licence cost.</p>
+        <span class="profile-cost cost-high">Quadro vDWS licence (3–5× cost)</span>
+      </div>
+      <div class="profile-card type-c">
+        <div class="profile-type">C</div>
+        <div class="profile-label">vCS — Virtual Compute Server</div>
+        <p>AI/ML inference, CUDA compute, simulation. Full tensor core access. Per-concurrent-user pricing.</p>
+        <span class="profile-cost cost-med">vCS licence</span>
+      </div>
+      <div class="profile-card type-a">
+        <div class="profile-type">A</div>
+        <div class="profile-label">vApps — Application Streaming</div>
+        <p>Single-application delivery without persistent desktop. No OpenGL in desktop context.</p>
+        <span class="profile-cost cost-low">GRID vApps licence</span>
+      </div>
+    </div>
+
+    <table class="findings-table mt-8">
+      <thead>
+        <tr>
+          <th>Finding</th>
+          <th>Severity</th>
+          <th>What it means</th>
+          <th>Recommended action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="metric-name">Slice saturated</td>
+          <td><span class="sev-badge sev-critical">✖ CRITICAL</span></td>
+          <td>FB &gt;88%, SM &gt;85%, or encoder &gt;85%. Users getting GPU stalls and frame drops.</td>
+          <td>Migrate VM to next-size-up profile (e.g., A16-4Q → A16-8Q).</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Encoder saturated</td>
+          <td><span class="sev-badge sev-warning">▲ WARNING</span></td>
+          <td>H.264/HEVC encoder &gt;80%. Display stream to endpoint is throttled. Users see lag before SM saturates.</td>
+          <td>Reduce sessions per slice, or enable HEVC/AV1 on supported clients.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Slice idle/oversized</td>
+          <td><span class="sev-badge sev-info">● INFO</span></td>
+          <td>FB &lt;20%, SM &lt;5%. Allocated frame buffer sitting empty. Density opportunity.</td>
+          <td>Downsize to smaller profile — run more slices per physical GPU.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Q-profile for light workload</td>
+          <td><span class="sev-badge sev-warning">▲ WARNING</span></td>
+          <td>Quadro vDWS (Q) instance with SM &lt;15% and FB &lt;40%. Paying 3–5× licence premium for Office/browser users.</td>
+          <td>Downgrade to B-profile and switch to GRID vPC licence.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Low slice pack efficiency</td>
+          <td><span class="sev-badge sev-info">● INFO</span></td>
+          <td>Aggregate FB in use &lt;30% of total allocated across all slices on pGPU.</td>
+          <td>Use smaller profile sizes to pack more users per physical GPU.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">GPU process hog</td>
+          <td><span class="sev-badge sev-warning">▲ WARNING</span></td>
+          <td>Single process consuming &gt;60% of GPU engine. Starves other vGPU slices on the same pGPU.</td>
+          <td>Apply NVIDIA vGPU equal-share scheduling, or move heavy user to dedicated C-profile.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">pGPU temperature critical</td>
+          <td><span class="sev-badge sev-critical">✖ CRITICAL</span></td>
+          <td>GPU die &gt;90°C. Thermal throttling active — all slices affected.</td>
+          <td>Check server cooling, airflow, and TDP envelope. Reduce active slices temporarily.</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Full passthrough (no slicing)</td>
+          <td><span class="sev-badge sev-info">● INFO</span></td>
+          <td>GPU passed through to single VM. Entire device consumed by one session.</td>
+          <td>Enable vGPU if multiple users share the host. Correct for single-user VDI/CAD workstations.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Best Practice Analysis ── -->
+<section id="analysis" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Best Practice Analysis</p>
+    <h2 class="section-title">21 checks. 4 platforms. One command.</h2>
+    <p class="section-sub">Run after every change or on a schedule. Exit code 2 on CRITICAL finding — plug directly into CI or a cron healthcheck.</p>
+
+    <div class="code-block mt-8">
+      <div class="code-header"><span>shell</span></div>
+      <div class="code-body"><span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze</span>               <span class="c-comment"># findings only (default)</span>
+<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze --show-passes</span>  <span class="c-comment"># include all passing checks</span>
+echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</span></div>
+    </div>
+
+    <table class="findings-table mt-8">
+      <thead>
+        <tr><th>Platform</th><th>Category</th><th>Check</th><th>Trigger</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>High Availability</td><td>Pool below min host count</td><td>&lt; 2 hosts per pool</td></tr>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>High Availability</td><td>No hosts accepting new sessions</td><td>available_hosts = 0</td></tr>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>Capacity</td><td>Session hosts nearing capacity</td><td>&gt; 80% of max sessions</td></tr>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>Configuration</td><td>BreadthFirst session skew</td><td>Skew factor &gt; 2.5×</td></tr>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>Version Currency</td><td>Mixed agent versions in pool</td><td>&gt; 1 agent version</td></tr>
+        <tr><td><span class="platform-pill pill-avd">AVD</span></td><td>Performance</td><td>Host CPU / memory elevated or critical</td><td>&gt; 75% / 90%</td></tr>
+        <tr><td><span class="platform-pill pill-rds">RDS</span></td><td>High Availability</td><td>Single Connection Broker</td><td>&lt; 2 brokers</td></tr>
+        <tr><td><span class="platform-pill pill-rds">RDS</span></td><td>Licensing</td><td>CAL utilisation high / critical</td><td>&gt; 80% / 95%</td></tr>
+        <tr><td><span class="platform-pill pill-rds">RDS</span></td><td>Capacity</td><td>Farm capacity headroom &lt; 20%</td><td>sessions / max &gt; 80%</td></tr>
+        <tr><td><span class="platform-pill pill-rds">RDS</span></td><td>Hygiene</td><td>Host uptime &gt; 30 days</td><td>Patch cadence risk</td></tr>
+        <tr><td><span class="platform-pill pill-rds">RDS</span></td><td>Hygiene</td><td>Disconnected session ratio &gt; 30%</td><td>Consuming CALs &amp; RAM</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>High Availability</td><td>Fewer than 2 Delivery Controllers</td><td>Single point of failure</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>High Availability</td><td>Unregistered VDAs &gt; 10%</td><td>Registration health</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>Capacity</td><td>VDA headroom &lt; 25% above sessions</td><td>Autoscale lag risk</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>Performance</td><td>Session density &gt; 8 / VDA</td><td>Per-VDA overload</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>Configuration</td><td>Delivery group in maintenance mode</td><td>Often forgotten</td></tr>
+        <tr><td><span class="platform-pill pill-citrix">Citrix</span></td><td>Version Currency</td><td>Mixed VDA agent versions</td><td>Policy behaviour risk</td></tr>
+        <tr><td><span class="platform-pill pill-gpu">GPU</span></td><td>Performance</td><td>Saturated / idle vGPU slice</td><td>Profile sizing ROI</td></tr>
+        <tr><td><span class="platform-pill pill-gpu">GPU</span></td><td>Configuration</td><td>Q-profile for light workload</td><td>Licence cost waste</td></tr>
+        <tr><td><span class="platform-pill pill-gpu">GPU</span></td><td>Capacity</td><td>Low aggregate FB efficiency</td><td>&lt; 30% of allocated in use</td></tr>
+        <tr><td><span class="platform-pill pill-gpu">GPU</span></td><td>Performance</td><td>Physical GPU temp / util / power</td><td>Thermal and power limits</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Metrics ── -->
+<section id="metrics" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Prometheus Metrics</p>
+    <h2 class="section-title">73+ metric samples per scrape</h2>
+    <p class="section-sub">Status gauges use numeric encoding: <code>0=ok · 1=warning · 2=critical · 3=unknown · 4=offline</code></p>
+
+    <table class="metrics-table mt-8">
+      <thead>
+        <tr><th>Metric</th><th>Type</th><th>Platform</th><th>Key Labels</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="metric-name">avd_masters_overall_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Rollup health status per platform (0–4)</td></tr>
+        <tr><td class="metric-name">avd_masters_last_collection_timestamp_seconds</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Unix timestamp of last successful collection</td></tr>
+        <tr><td class="metric-name">avd_masters_collection_errors_total</td><td class="metric-type">counter</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Cumulative collection errors per platform</td></tr>
+        <tr><td class="metric-name">avd_host_pool_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Host pool health status (0–4)</td></tr>
+        <tr><td class="metric-name">avd_host_pool_active_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Active user sessions in the pool</td></tr>
+        <tr><td class="metric-name">avd_host_pool_disconnected_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Disconnected sessions in the pool</td></tr>
+        <tr><td class="metric-name">avd_host_pool_available_hosts</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Hosts accepting new sessions</td></tr>
+        <tr><td class="metric-name">avd_session_host_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, host</td><td>Individual session host status (0–4)</td></tr>
+        <tr><td class="metric-name">avd_session_host_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, host</td><td>Current session count on host</td></tr>
+        <tr><td class="metric-name">avd_session_host_cpu_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, host</td><td>CPU utilisation % from Azure Monitor</td></tr>
+        <tr><td class="metric-name">avd_session_host_memory_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, host</td><td>Memory utilisation %</td></tr>
+        <tr><td class="metric-name">avd_session_host_allow_new_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, host</td><td>1 if accepting new sessions, 0 otherwise</td></tr>
+        <tr><td class="metric-name">rds_session_host_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>Session host reachability and health</td></tr>
+        <tr><td class="metric-name">rds_session_host_active_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>Active sessions on RDSH server</td></tr>
+        <tr><td class="metric-name">rds_session_host_cpu_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>CPU % from Win32_PerfFormatted (WMI)</td></tr>
+        <tr><td class="metric-name">rds_session_host_memory_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>Memory utilisation % (WMI)</td></tr>
+        <tr><td class="metric-name">rds_session_host_disk_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>C: drive utilisation % (WMI)</td></tr>
+        <tr><td class="metric-name">rds_session_host_uptime_hours</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, host</td><td>Host uptime in hours</td></tr>
+        <tr><td class="metric-name">rds_license_cals_used</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, server</td><td>RDS CALs currently issued</td></tr>
+        <tr><td class="metric-name">rds_license_cals_total</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, server</td><td>Total RDS CALs on licence server</td></tr>
+        <tr><td class="metric-name">rds_license_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, server</td><td>CAL utilisation as percentage of total</td></tr>
+        <tr><td class="metric-name">rds_broker_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-rds">RDS</span></td><td>farm, broker</td><td>RD Connection Broker health status</td></tr>
+        <tr><td class="metric-name">citrix_delivery_group_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-citrix">Citrix</span></td><td>site, delivery_group</td><td>Delivery group health (0–4)</td></tr>
+        <tr><td class="metric-name">citrix_delivery_group_total_machines</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-citrix">Citrix</span></td><td>site, delivery_group</td><td>Total VDAs in delivery group</td></tr>
+        <tr><td class="metric-name">citrix_delivery_group_registered_machines</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-citrix">Citrix</span></td><td>site, delivery_group</td><td>Registered VDAs</td></tr>
+        <tr><td class="metric-name">citrix_delivery_group_active_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-citrix">Citrix</span></td><td>site, delivery_group</td><td>Active sessions in delivery group</td></tr>
+        <tr><td class="metric-name">citrix_controller_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-citrix">Citrix</span></td><td>site, controller</td><td>Delivery Controller state (0–4)</td></tr>
+        <tr><td class="metric-name">gpu_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>Physical GPU SM utilisation %</td></tr>
+        <tr><td class="metric-name">gpu_memory_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>Physical GPU VRAM utilisation %</td></tr>
+        <tr><td class="metric-name">gpu_encoder_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>Physical GPU H.264/HEVC encoder %</td></tr>
+        <tr><td class="metric-name">gpu_temperature_celsius</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>GPU die temperature in Celsius</td></tr>
+        <tr><td class="metric-name">gpu_power_draw_watts</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>GPU power draw in watts</td></tr>
+        <tr><td class="metric-name">gpu_vgpu_instance_count</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, gpu_name</td><td>Active vGPU slices on this pGPU</td></tr>
+        <tr><td class="metric-name">vgpu_framebuffer_used_mb</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, vm_name, profile, profile_type</td><td>Frame buffer in use by this vGPU instance (MB)</td></tr>
+        <tr><td class="metric-name">vgpu_framebuffer_total_mb</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, vm_name, profile, profile_type</td><td>Frame buffer allocated to this vGPU instance (MB)</td></tr>
+        <tr><td class="metric-name">vgpu_sm_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, vm_name, profile, profile_type</td><td>vGPU shader/compute utilisation %</td></tr>
+        <tr><td class="metric-name">vgpu_encoder_utilization_percent</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-gpu">GPU</span></td><td>host, platform, gpu_index, vm_name, profile, profile_type</td><td>vGPU encoder utilisation % — remoting quality indicator</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Alerts ── -->
+<section id="alerts" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Alert Rules</p>
+    <h2 class="section-title">29 Prometheus rules · Alertmanager Teams delivery</h2>
+    <p class="section-sub">All rules include <code>severity</code>, <code>platform</code> labels, and templated descriptions. Inhibition rules suppress child alerts when a parent condition explains them.</p>
+
+    <div class="two-col mt-8">
+      <div>
+        <div class="alert-group">
+          <div class="alert-group-title text-avd">Azure Virtual Desktop · 9 rules</div>
+          <ul class="alert-list">
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDSessionHostOffline</span><span class="alert-dur">for: 2m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDSessionHostCritical</span><span class="alert-dur">for: 2m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDSessionHostWarning</span><span class="alert-dur">for: 10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDSessionHostHighCPU</span><span class="alert-dur">for: 5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDSessionHostHighCPUWarning</span><span class="alert-dur">for: 10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDSessionHostHighMemory</span><span class="alert-dur">for: 5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDSessionHostHighMemoryWarning</span><span class="alert-dur">for: 10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDHostPoolNoAvailableHosts</span><span class="alert-dur">for: 3m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDHostPoolDegraded</span><span class="alert-dur">&lt;50% available</span></li>
+          </ul>
+        </div>
+        <div class="alert-group">
+          <div class="alert-group-title" style="color:var(--muted)">Meta / Infrastructure · 3 rules</div>
+          <ul class="alert-list">
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDMastersDataStale</span><span class="alert-dur">&gt;5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">AVDMastersDataStaleCritical</span><span class="alert-dur">&gt;10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">AVDMastersHighErrorRate</span><span class="alert-dur">&gt;5 in 15m</span></li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="alert-group">
+          <div class="alert-group-title text-rds">Terminal Services · 11 rules</div>
+          <ul class="alert-list">
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSSessionHostOffline</span><span class="alert-dur">for: 2m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSSessionHostCritical</span><span class="alert-dur">for: 2m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSSessionHostHighCPU</span><span class="alert-dur">for: 5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">RDSSessionHostHighCPUWarning</span><span class="alert-dur">for: 10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSSessionHostHighMemory</span><span class="alert-dur">for: 5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">RDSSessionHostHighMemoryWarning</span><span class="alert-dur">for: 10m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSSessionHostDiskCritical</span><span class="alert-dur">for: 5m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">RDSSessionHostDiskWarning</span><span class="alert-dur">for: 15m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSLicenseCritical</span><span class="alert-dur">&gt;95% CALs</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">RDSLicenseWarning</span><span class="alert-dur">&gt;80% CALs</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">RDSBrokerDown</span><span class="alert-dur">for: 2m</span></li>
+          </ul>
+        </div>
+        <div class="alert-group">
+          <div class="alert-group-title text-citrix">Citrix VDI · 6 rules</div>
+          <ul class="alert-list">
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">CitrixDeliveryControllerDown</span><span class="alert-dur">for: 2m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">CitrixDeliveryGroupMajorOutage</span><span class="alert-dur">&gt;50% VDAs</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">CitrixUnregisteredVDAs</span><span class="alert-dur">≥3 VDAs</span></li>
+            <li class="alert-item"><span class="sev-badge sev-warning">WARN</span><span class="alert-name">CitrixUnregisteredVDAWarning</span><span class="alert-dur">≥1 VDA</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">CitrixDeliveryGroupDown</span><span class="alert-dur">for: 3m</span></li>
+            <li class="alert-item"><span class="sev-badge sev-critical">CRIT</span><span class="alert-name">CitrixNoRegisteredVDAs</span><span class="alert-dur">for: 3m</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quick Start ── -->
+<section id="quickstart" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Get Running</p>
+    <h2 class="section-title">Up in five minutes</h2>
+    <p class="section-sub">Python 3.11+, a config file, and WinRM access to your Windows hosts.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Install</h3>
+          <div class="code-block">
+            <div class="code-header"><span>shell</span></div>
+            <div class="code-body"><span class="c-cmd">git clone</span> https://github.com/avdmasters/avd-masters.git
+<span class="c-cmd">cd</span> avd-masters
+<span class="c-cmd">pip install</span> -r requirements.txt</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Configure</h3>
+          <div class="code-block">
+            <div class="code-header"><span>config.yaml</span></div>
+            <div class="code-body"><span class="c-comment"># Credentials via env vars — never commit passwords</span>
+<span class="c-key">rds</span>:
+  <span class="c-key">farm_name</span>:       <span class="c-str">"Production RDS Farm"</span>
+  <span class="c-key">hosts</span>:           [<span class="c-str">rdsh01.corp.local</span>, <span class="c-str">rdsh02.corp.local</span>]
+  <span class="c-key">broker_hosts</span>:    [<span class="c-str">rdbroker01.corp.local</span>]
+  <span class="c-key">winrm_username</span>:  <span class="c-str">"CORP\svc-monitoring"</span>
+  <span class="c-key">winrm_password</span>:  <span class="c-str">"${RDS_PASSWORD}"</span>
+  <span class="c-key">use_ssl</span>:         <span class="c-val">true</span>
+
+<span class="c-key">avd</span>:
+  <span class="c-key">subscription_id</span>: <span class="c-str">"00000000-0000-0000-0000-000000000000"</span>
+
+<span class="c-key">citrix</span>:
+  <span class="c-key">director_url</span>:    <span class="c-str">"https://citrix-director.corp.local/Director"</span>
+  <span class="c-key">username</span>:        <span class="c-str">"CORP\svc-monitoring"</span>
+  <span class="c-key">password</span>:        <span class="c-str">"${CITRIX_PASSWORD}"</span>
+
+<span class="c-key">prometheus</span>:
+  <span class="c-key">port</span>: <span class="c-val">9090</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Run</h3>
+          <div class="code-block">
+            <div class="code-header"><span>shell</span></div>
+            <div class="code-body"><span class="c-comment"># Live TUI dashboard (default)</span>
+<span class="c-cmd">python -m avd_masters</span>
+
+<span class="c-comment"># Headless + Prometheus exporter only</span>
+<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--exporter-only</span>
+
+<span class="c-comment"># Best-practice analysis report</span>
+<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze</span>
+
+<span class="c-comment"># One-shot JSON snapshot</span>
+<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--once</span> | jq .rds.license_info</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Or use Docker Compose</h3>
+          <div class="code-block">
+            <div class="code-header"><span>shell</span></div>
+            <div class="code-body"><span class="c-cmd">export</span> RDS_PASSWORD=<span class="c-str">"..."</span>
+<span class="c-cmd">export</span> TEAMS_WEBHOOK_CRITICAL=<span class="c-str">"https://outlook.office.com/webhook/..."</span>
+<span class="c-cmd">cd</span> prometheus
+<span class="c-cmd">docker compose up</span> -d
+<span class="c-comment"># Prometheus on :9091, Alertmanager on :9093</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Architecture ── -->
+<section id="architecture" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Architecture</p>
+    <h2 class="section-title">How it fits together</h2>
+
+    <div class="arch-diagram"><span class="a-bright">                        AVD Masters Suite</span>
+<span class="a-bright">  ┌──────────────────────────────────────────────────────────────┐</span>
+  │                                                              │
+  │  <span class="a-avd">┌─────────────────┐</span>  <span class="a-rds">┌──────────────────┐</span>  <span class="a-citrix">┌──────────────┐</span>  │
+  │  <span class="a-avd">│  AVD Collector  │</span>  <span class="a-rds">│  RDS Collector   │</span>  <span class="a-citrix">│  Citrix      │</span>  │
+  │  <span class="a-avd">│  Azure SDK      │</span>  <span class="a-rds">│  WinRM + WMI     │</span>  <span class="a-citrix">│  Collector   │</span>  │
+  │  <span class="a-avd">│  Azure Monitor  │</span>  <span class="a-rds">│  PowerShell      │</span>  <span class="a-citrix">│  OData API   │</span>  │
+  │  <span class="a-avd">└────────┬────────┘</span>  <span class="a-rds">└────────┬─────────┘</span>  <span class="a-citrix">└──────┬───────┘</span>  │
+  │           │                   │                   │          │
+  │  <span class="a-gpu">┌────────────────────────────────────────────────────────┐</span>  │
+  │  <span class="a-gpu">│              GPU Collector  (all platforms)            │</span>  │
+  │  <span class="a-gpu">│     nvidia-smi vgpu · WMI GPUEngine · Process top-N   │</span>  │
+  │  <span class="a-gpu">└───────────────────────────┬────────────────────────────┘</span>  │
+  │                           │ MasterSnapshot                   │
+  │  <span class="a-bright">┌──────────────────────────┴────────────────────────────┐</span>  │
+  │  <span class="a-bright">│                 Monitoring Engine                      │</span>  │
+  │  <span class="a-bright">│   alert evaluation  ·  threshold checks  ·  notifiers │</span>  │
+  │  <span class="a-bright">└───┬────────────────────────┬──────────────────────┬───┘</span>  │
+  │      │                        │                      │       │
+  │  <span class="a-tui">┌──┴───┐</span>  <span class="a-prom">┌──────────────┐</span>  <span class="a-teams">┌────────────┐</span>       │       │
+  │  <span class="a-tui">│  TUI │</span>  <span class="a-prom">│  Prometheus  │</span>  <span class="a-teams">│   Teams    │</span>       │       │
+  │  <span class="a-tui">│  dash│</span>  <span class="a-prom">│  /metrics    │</span>  <span class="a-teams">│  notifier  │</span>       │       │
+  │  <span class="a-tui">└──────┘</span>  <span class="a-prom">└──────┬───────┘</span>  <span class="a-teams">└────────────┘</span>       │       │
+  │               │                             <span class="a-bright">┌──────┴─────┐</span>  │
+  │          <span class="a-prom">┌─────┴──────┐</span>  <span class="a-graf">┌──────────────┐</span>  <span class="a-bright">│  Analysis  │</span>  │
+  │          <span class="a-prom">│ Alertmanager│</span>  <span class="a-graf">│   Grafana    │</span>  <span class="a-bright">│  --analyze │</span>  │
+  │          <span class="a-prom">│  Teams cards│</span>  <span class="a-graf">│  25 panels   │</span>  <span class="a-bright">└────────────┘</span>  │
+  │          <span class="a-prom">└─────────────┘</span>  <span class="a-graf">└──────────────┘</span>                   │
+<span class="a-bright">  └──────────────────────────────────────────────────────────────┘</span></div>
+  </div>
+</section>
+
+<!-- ── Config Reference ── -->
+<section id="reference" class="section">
+  <div class="container">
+    <p class="section-eyebrow">Reference</p>
+    <h2 class="section-title">Configuration reference</h2>
+    <p class="section-sub">All string values support <code>${ENV_VAR}</code> substitution. Process exits if a referenced variable is not set.</p>
+
+    <h3 class="mt-8" style="color:var(--avd); margin-bottom:12px">Azure Virtual Desktop</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">subscription_id</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required</span> Azure subscription UUID</td></tr>
+        <tr><td class="ref-key">resource_groups</td><td class="ref-type">list</td><td>all RGs</td><td>Limit scanning to specific resource groups</td></tr>
+        <tr><td class="ref-key">poll_interval_s</td><td class="ref-type">integer</td><td>60</td><td>Collection interval in seconds</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt-8" style="color:var(--rds); margin-bottom:12px">Terminal Services (RDS)</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">farm_name</td><td class="ref-type">string</td><td>"RDS Farm"</td><td>Display name for this RDS farm</td></tr>
+        <tr><td class="ref-key">hosts</td><td class="ref-type">list</td><td>—</td><td><span class="ref-req">required</span> All session hosts + brokers</td></tr>
+        <tr><td class="ref-key">broker_hosts</td><td class="ref-type">list</td><td>[]</td><td>Subset of hosts that are RD Connection Brokers</td></tr>
+        <tr><td class="ref-key">license_server</td><td class="ref-type">string</td><td>null</td><td>RD Licensing server hostname (optional)</td></tr>
+        <tr><td class="ref-key">winrm_username</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required</span> DOMAIN\user or user@domain</td></tr>
+        <tr><td class="ref-key">winrm_password</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required</span> Use <code>${ENV_VAR}</code></td></tr>
+        <tr><td class="ref-key">winrm_transport</td><td class="ref-type">string</td><td>"ntlm"</td><td>ntlm · kerberos (basic rejected without SSL)</td></tr>
+        <tr><td class="ref-key">winrm_port</td><td class="ref-type">integer</td><td>5986</td><td>5986 = HTTPS, 5985 = HTTP (triggers warning)</td></tr>
+        <tr><td class="ref-key">use_ssl</td><td class="ref-type">bool</td><td>true</td><td>Set false only for lab/testing (logs warning)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt-8" style="color:var(--citrix); margin-bottom:12px">Citrix VDI</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">site_name</td><td class="ref-type">string</td><td>"Citrix Site"</td><td>Display name</td></tr>
+        <tr><td class="ref-key">director_url</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required*</span> <code>https://director.corp/Director</code></td></tr>
+        <tr><td class="ref-key">username</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required*</span></td></tr>
+        <tr><td class="ref-key">password</td><td class="ref-type">string</td><td>—</td><td>Use <code>${ENV_VAR}</code></td></tr>
+        <tr><td class="ref-key">auth_transport</td><td class="ref-type">string</td><td>"ntlm"</td><td>ntlm · basic (basic requires TLS)</td></tr>
+        <tr><td class="ref-key">verify_ssl</td><td class="ref-type">bool</td><td>true</td><td>Never disable in production</td></tr>
+        <tr><td class="ref-key">use_winrm</td><td class="ref-type">bool</td><td>false</td><td>Use WinRM + Broker PowerShell instead of OData</td></tr>
+        <tr><td class="ref-key">winrm_host</td><td class="ref-type">string</td><td>—</td><td><span class="ref-req">required*</span> if use_winrm=true</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt-8" style="color:var(--gpu); margin-bottom:12px">GPU</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">enabled</td><td class="ref-type">bool</td><td>false</td><td>Enable GPU collection</td></tr>
+        <tr><td class="ref-key">nvidia_smi_path</td><td class="ref-type">string</td><td>C:\Windows\System32\nvidia-smi.exe</td><td>Full path to nvidia-smi on target hosts</td></tr>
+        <tr><td class="ref-key">collect_processes</td><td class="ref-type">bool</td><td>true</td><td>Enable per-process GPU attribution</td></tr>
+        <tr><td class="ref-key">top_processes</td><td class="ref-type">integer</td><td>10</td><td>Number of top GPU processes to capture</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt-8" style="color:#e6522c; margin-bottom:12px">Prometheus</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">port</td><td class="ref-type">integer</td><td>9090</td><td>/metrics HTTP port</td></tr>
+        <tr><td class="ref-key">host</td><td class="ref-type">string</td><td>"127.0.0.1"</td><td>Bind address. Use 0.0.0.0 only behind a firewall or proxy.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="mt-8" style="color:#7b83eb; margin-bottom:12px">Notifiers</h3>
+    <table class="ref-table">
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="ref-key">notifiers.console</td><td class="ref-type">dict</td><td>{}</td><td>Rich console alert output — always enabled</td></tr>
+        <tr><td class="ref-key">notifiers.teams.webhook_url</td><td class="ref-type">string</td><td>—</td><td>MS Teams incoming webhook. Use <code>${ENV_VAR}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <p style="color:var(--muted)">AVD Masters Suite · MIT Licence</p>
+    <p class="mt-2" style="font-size:0.8rem">Built for engineers who run AVD, RDS, and Citrix in the same shop and are tired of three separate consoles.</p>
+    <ul class="footer-links">
+      <li><a href="https://github.com/avdmasters/avd-masters">GitHub</a></li>
+      <li><a href="https://github.com/avdmasters/avd-masters/issues">Issues</a></li>
+      <li><a href="https://github.com/avdmasters/avd-masters/blob/master/config/config.yaml.example">config.yaml.example</a></li>
+      <li><a href="https://github.com/avdmasters/avd-masters/tree/master/prometheus/alerts">Alert Rules</a></li>
+      <li><a href="https://github.com/avdmasters/avd-masters/blob/master/grafana/avd_masters_dashboard.json">Grafana JSON</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
