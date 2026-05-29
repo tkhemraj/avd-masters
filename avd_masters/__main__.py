@@ -38,6 +38,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Run headless with Prometheus exporter only — no TUI, no console alerts",
     )
     parser.add_argument(
+        "--analyze", action="store_true",
+        help="Run a single collection, print a best-practice analysis report, and exit",
+    )
+    parser.add_argument(
+        "--show-passes", action="store_true",
+        help="Include passing checks in the --analyze report (default: findings only)",
+    )
+    parser.add_argument(
         "--log-level", default=None,
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Override log level from config",
@@ -58,6 +66,14 @@ def main(argv: list[str] | None = None) -> int:
     from .engine import MonitoringEngine
 
     engine = MonitoringEngine(config)
+
+    if args.analyze:
+        from .analysis.report import print_report, run_analysis
+        snap = engine.collect()
+        findings = run_analysis(snap, config.get("analysis"))
+        print_report(findings, hide_passes=not args.show_passes)
+        critical = sum(1 for f in findings if f.severity.value == "critical")
+        return 2 if critical else 0
 
     if args.once:
         import json, dataclasses
