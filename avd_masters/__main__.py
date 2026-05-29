@@ -69,8 +69,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.analyze:
         from .analysis.report import print_report, run_analysis
+        from .analysis.gpu import analyse as gpu_analyse
         snap = engine.collect()
         findings = run_analysis(snap, config.get("analysis"))
+        if snap.gpu:
+            findings += gpu_analyse(snap.gpu, (config.get("analysis") or {}).get("gpu"))
         print_report(findings, hide_passes=not args.show_passes)
         critical = sum(1 for f in findings if f.severity.value == "critical")
         return 2 if critical else 0

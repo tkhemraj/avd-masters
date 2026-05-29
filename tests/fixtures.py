@@ -214,10 +214,155 @@ def make_citrix_snapshot() -> CitrixSnapshot:
     )
 
 
+def make_gpu_snapshot():
+    from datetime import datetime, timezone
+    from avd_masters.models.gpu import (
+        GPUSnapshot, HostGPUData, PhysicalGPU, VGPUInstance, VGPUProfile, GPUEngine,
+    )
+    now = datetime.now(timezone.utc)
+
+    def profile(name): return VGPUProfile.parse(name)
+
+    return GPUSnapshot(
+        collected_at=now,
+        hosts={
+            # AVD session host — A16 GPU, 3 healthy slices, 1 saturated
+            "avdhost-prod-01": HostGPUData(
+                hostname="avdhost-prod-01", platform="avd",
+                has_nvidia=True, has_vgpu=True,
+                physical_gpus=[PhysicalGPU(
+                    index=0, name="NVIDIA A16",
+                    total_memory_mb=16384, used_memory_mb=12800,
+                    gpu_util_pct=71.0, mem_util_pct=78.0,
+                    encoder_util_pct=42.0, decoder_util_pct=18.0,
+                    temperature_c=74.0, power_draw_w=210.0, power_limit_w=250.0,
+                    driver_version="535.129.03",
+                    vgpu_instances=[
+                        VGPUInstance(
+                            instance_id="vgpu-0001", profile=profile("GRID A16-4Q"),
+                            gpu_index=0, vm_name="avd-vm-alice",
+                            fb_used_mb=2100, fb_total_mb=4096,
+                            sm_util_pct=38.0, mem_util_pct=52.0,
+                            encoder_util_pct=45.0, decoder_util_pct=12.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-0002", profile=profile("GRID A16-4Q"),
+                            gpu_index=0, vm_name="avd-vm-bob",
+                            fb_used_mb=3850, fb_total_mb=4096,  # saturated!
+                            sm_util_pct=91.0, mem_util_pct=94.0,
+                            encoder_util_pct=88.0, decoder_util_pct=22.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-0003", profile=profile("GRID A16-4Q"),
+                            gpu_index=0, vm_name="avd-vm-carol",
+                            fb_used_mb=310, fb_total_mb=4096,   # idle / oversized
+                            sm_util_pct=3.0, mem_util_pct=8.0,
+                            encoder_util_pct=4.0, decoder_util_pct=1.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-0004", profile=profile("GRID A16-4Q"),
+                            gpu_index=0, vm_name="avd-vm-dave",
+                            fb_used_mb=1900, fb_total_mb=4096,
+                            sm_util_pct=28.0, mem_util_pct=46.0,
+                            encoder_util_pct=31.0, decoder_util_pct=8.0,
+                        ),
+                    ],
+                )],
+                collected_at=now,
+            ),
+            # RDS session host — T4, mixed B and Q profiles, one Q-profile user doing Office
+            "rdsh01.corp.local": HostGPUData(
+                hostname="rdsh01.corp.local", platform="rds",
+                has_nvidia=True, has_vgpu=True,
+                physical_gpus=[PhysicalGPU(
+                    index=0, name="NVIDIA T4",
+                    total_memory_mb=16384, used_memory_mb=8192,
+                    gpu_util_pct=55.0, mem_util_pct=50.0,
+                    encoder_util_pct=38.0, decoder_util_pct=10.0,
+                    temperature_c=68.0, power_draw_w=55.0, power_limit_w=70.0,
+                    driver_version="535.129.03",
+                    vgpu_instances=[
+                        VGPUInstance(
+                            instance_id="vgpu-t4-01", profile=profile("GRID T4-2B"),
+                            gpu_index=0, vm_name="rdsh-session-101",
+                            fb_used_mb=820, fb_total_mb=2048,
+                            sm_util_pct=22.0, mem_util_pct=40.0,
+                            encoder_util_pct=29.0, decoder_util_pct=5.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-t4-02", profile=profile("GRID T4-4Q"),  # Q for Office user!
+                            gpu_index=0, vm_name="rdsh-session-102",
+                            fb_used_mb=480, fb_total_mb=4096,
+                            sm_util_pct=6.0, mem_util_pct=12.0,  # barely using it
+                            encoder_util_pct=8.0, decoder_util_pct=2.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-t4-03", profile=profile("GRID T4-2B"),
+                            gpu_index=0, vm_name="rdsh-session-103",
+                            fb_used_mb=950, fb_total_mb=2048,
+                            sm_util_pct=44.0, mem_util_pct=46.0,
+                            encoder_util_pct=51.0, decoder_util_pct=9.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-t4-04", profile=profile("GRID T4-2B"),
+                            gpu_index=0, vm_name="rdsh-session-104",
+                            fb_used_mb=1100, fb_total_mb=2048,
+                            sm_util_pct=53.0, mem_util_pct=54.0,
+                            encoder_util_pct=61.0, decoder_util_pct=11.0,
+                        ),
+                    ],
+                )],
+                top_gpu_processes=[
+                    GPUEngine("3D", 61.0, pid=4812, process_name="AutoCAD"),
+                ],
+                collected_at=now,
+            ),
+            # Citrix VDA — A10, hot GPU running render workloads
+            "ctx-win11-01": HostGPUData(
+                hostname="ctx-win11-01", platform="citrix",
+                has_nvidia=True, has_vgpu=True,
+                physical_gpus=[PhysicalGPU(
+                    index=0, name="NVIDIA A10",
+                    total_memory_mb=24576, used_memory_mb=18000,
+                    gpu_util_pct=83.0, mem_util_pct=73.0,
+                    encoder_util_pct=22.0, decoder_util_pct=8.0,
+                    temperature_c=79.0, power_draw_w=135.0, power_limit_w=150.0,
+                    driver_version="535.129.03",
+                    vgpu_instances=[
+                        VGPUInstance(
+                            instance_id="vgpu-a10-01", profile=profile("GRID A10-8Q"),
+                            gpu_index=0, vm_name="ctx-session-frank",
+                            fb_used_mb=6900, fb_total_mb=8192,
+                            sm_util_pct=77.0, mem_util_pct=84.0,
+                            encoder_util_pct=19.0, decoder_util_pct=7.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-a10-02", profile=profile("GRID A10-8Q"),
+                            gpu_index=0, vm_name="ctx-session-heidi",
+                            fb_used_mb=7800, fb_total_mb=8192,
+                            sm_util_pct=88.0, mem_util_pct=95.0,  # saturated
+                            encoder_util_pct=25.0, decoder_util_pct=9.0,
+                        ),
+                        VGPUInstance(
+                            instance_id="vgpu-a10-03", profile=profile("GRID A10-8Q"),
+                            gpu_index=0, vm_name="ctx-session-ivan",
+                            fb_used_mb=3200, fb_total_mb=8192,
+                            sm_util_pct=41.0, mem_util_pct=39.0,
+                            encoder_util_pct=18.0, decoder_util_pct=5.0,
+                        ),
+                    ],
+                )],
+                collected_at=now,
+            ),
+        },
+    )
+
+
 def make_master_snapshot() -> MasterSnapshot:
     return MasterSnapshot(
         collected_at=NOW,
         avd=make_avd_snapshot(),
         rds=make_rds_snapshot(),
         citrix=make_citrix_snapshot(),
+        gpu=make_gpu_snapshot(),
     )

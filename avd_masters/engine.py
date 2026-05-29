@@ -59,6 +59,7 @@ class MonitoringEngine:
         self._avd_collector: Optional[BaseCollector] = None
         self._rds_collector: Optional[BaseCollector] = None
         self._citrix_collector: Optional[BaseCollector] = None
+        self._gpu_collector: Optional[Any] = None
         self._prometheus: Optional[Any] = None
 
         self._last_alert_state: dict[str, HealthStatus] = {}
@@ -92,6 +93,11 @@ class MonitoringEngine:
             from .collectors.citrix import make_citrix_collector
             self._citrix_collector = make_citrix_collector(self.config["citrix"])
             logger.info("Citrix collector configured")
+
+        if self.config.get("gpu", {}).get("enabled", False):
+            from .collectors.gpu import GPUCollector
+            self._gpu_collector = GPUCollector(self.config)
+            logger.info("GPU collector configured")
 
     def collect(self) -> MasterSnapshot:
         snap = MasterSnapshot(collected_at=datetime.now(timezone.utc))
@@ -128,6 +134,12 @@ class MonitoringEngine:
                     site_name=self.config["citrix"].get("site_name", "Citrix Site"),
                     errors=[str(exc)],
                 )
+
+        if self._gpu_collector:
+            try:
+                snap.gpu = self._gpu_collector.collect()
+            except Exception as exc:
+                logger.error("GPU collection failed: %s", exc)
 
         self._evaluate_alerts(snap)
 

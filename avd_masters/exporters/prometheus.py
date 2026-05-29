@@ -243,6 +243,68 @@ class PrometheusExporter:
             ["site", "controller"],
         )
 
+        # ── GPU / vGPU ───────────────────────────────────────────────────────
+        self.gpu_util = g(
+            "gpu_utilization_percent",
+            "Physical GPU SM utilisation percent",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_mem_util = g(
+            "gpu_memory_utilization_percent",
+            "Physical GPU VRAM utilisation percent",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_encoder_util = g(
+            "gpu_encoder_utilization_percent",
+            "Physical GPU H.264/HEVC encoder utilisation percent",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_decoder_util = g(
+            "gpu_decoder_utilization_percent",
+            "Physical GPU decoder utilisation percent",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_temperature = g(
+            "gpu_temperature_celsius",
+            "Physical GPU die temperature in Celsius",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_power_draw = g(
+            "gpu_power_draw_watts",
+            "Physical GPU power draw in watts",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.gpu_vgpu_count = g(
+            "gpu_vgpu_instance_count",
+            "Number of active vGPU instances on this physical GPU",
+            ["host", "platform", "gpu_index", "gpu_name"],
+        )
+        self.vgpu_fb_used = g(
+            "vgpu_framebuffer_used_mb",
+            "Frame buffer used by a vGPU instance in MB",
+            ["host", "platform", "gpu_index", "vm_name", "profile", "profile_type"],
+        )
+        self.vgpu_fb_total = g(
+            "vgpu_framebuffer_total_mb",
+            "Frame buffer allocated to a vGPU instance in MB",
+            ["host", "platform", "gpu_index", "vm_name", "profile", "profile_type"],
+        )
+        self.vgpu_sm_util = g(
+            "vgpu_sm_utilization_percent",
+            "vGPU instance shader/compute utilisation percent",
+            ["host", "platform", "gpu_index", "vm_name", "profile", "profile_type"],
+        )
+        self.vgpu_encoder_util = g(
+            "vgpu_encoder_utilization_percent",
+            "vGPU instance encoder utilisation percent",
+            ["host", "platform", "gpu_index", "vm_name", "profile", "profile_type"],
+        )
+        self.vgpu_decoder_util = g(
+            "vgpu_decoder_utilization_percent",
+            "vGPU instance decoder utilisation percent",
+            ["host", "platform", "gpu_index", "vm_name", "profile", "profile_type"],
+        )
+
         return reg
 
     # ── Update metrics from a snapshot ───────────────────────────────────────
@@ -264,6 +326,8 @@ class PrometheusExporter:
             self._update_rds(snap.rds)
         if snap.citrix:
             self._update_citrix(snap.citrix)
+        if snap.gpu:
+            self._update_gpu(snap.gpu)
 
     def _update_avd(self, snap) -> None:
         self.m_last_scrape.labels(platform="avd").set(snap.collected_at.timestamp())
@@ -343,6 +407,48 @@ class PrometheusExporter:
             self.ctx_controller_status.labels(site=site, controller=ctrl.name).set(
                 _sv(ctrl.status)
             )
+
+    def _update_gpu(self, snap) -> None:
+        for hostname, host in snap.hosts.items():
+            for gpu in host.physical_gpus:
+                lp = {
+                    "host": hostname,
+                    "platform": host.platform,
+                    "gpu_index": str(gpu.index),
+                    "gpu_name": gpu.name,
+                }
+                if gpu.gpu_util_pct is not None:
+                    self.gpu_util.labels(**lp).set(gpu.gpu_util_pct)
+                vram = gpu.vram_util_pct
+                if vram is not None:
+                    self.gpu_mem_util.labels(**lp).set(vram)
+                if gpu.encoder_util_pct is not None:
+                    self.gpu_encoder_util.labels(**lp).set(gpu.encoder_util_pct)
+                if gpu.decoder_util_pct is not None:
+                    self.gpu_decoder_util.labels(**lp).set(gpu.decoder_util_pct)
+                if gpu.temperature_c is not None:
+                    self.gpu_temperature.labels(**lp).set(gpu.temperature_c)
+                if gpu.power_draw_w is not None:
+                    self.gpu_power_draw.labels(**lp).set(gpu.power_draw_w)
+                self.gpu_vgpu_count.labels(**lp).set(len(gpu.vgpu_instances))
+
+                for inst in gpu.vgpu_instances:
+                    li = {
+                        "host": hostname,
+                        "platform": host.platform,
+                        "gpu_index": str(gpu.index),
+                        "vm_name": inst.vm_name or inst.instance_id[:16],
+                        "profile": inst.profile.raw_name,
+                        "profile_type": inst.profile.profile_type,
+                    }
+                    self.vgpu_fb_used.labels(**li).set(inst.fb_used_mb)
+                    self.vgpu_fb_total.labels(**li).set(inst.fb_total_mb)
+                    if inst.sm_util_pct is not None:
+                        self.vgpu_sm_util.labels(**li).set(inst.sm_util_pct)
+                    if inst.encoder_util_pct is not None:
+                        self.vgpu_encoder_util.labels(**li).set(inst.encoder_util_pct)
+                    if inst.decoder_util_pct is not None:
+                        self.vgpu_decoder_util.labels(**li).set(inst.decoder_util_pct)
 
     # ── HTTP server ───────────────────────────────────────────────────────────
 

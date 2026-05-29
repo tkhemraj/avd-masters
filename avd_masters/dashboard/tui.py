@@ -328,6 +328,18 @@ def render_dashboard(snap: MasterSnapshot) -> Layout:
         layout["body"].update(
             Panel("[dim]No platforms configured. Check config.yaml.[/dim]")
         )
+    elif snap.gpu is not None and snap.gpu.hosts_with_gpu:
+        # GPU data available — split body: platform panels top, GPU panel bottom
+        from rich.console import Group as RichGroup
+        from .gpu_panel import render_gpu_panel
+        layout["body"].split_column(
+            Layout(
+                Columns(panels, equal=True, expand=True) if len(panels) > 1 else panels[0],
+                name="platforms",
+                ratio=3,
+            ),
+            Layout(render_gpu_panel(snap.gpu), name="gpu", ratio=2),
+        )
     elif len(panels) == 1:
         layout["body"].update(panels[0])
     else:

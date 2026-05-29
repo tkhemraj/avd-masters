@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 
 class HealthStatus(str, Enum):
@@ -286,6 +286,7 @@ class MasterSnapshot:
     avd: Optional[AVDSnapshot] = None
     rds: Optional[RDSSnapshot] = None
     citrix: Optional[CitrixSnapshot] = None
+    gpu: Optional[Any] = None  # GPUSnapshot — imported lazily to avoid circular dep
 
     @property
     def overall_status(self) -> HealthStatus:
