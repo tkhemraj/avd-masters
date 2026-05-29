@@ -59,10 +59,23 @@ class MonitoringEngine:
         self._avd_collector: Optional[BaseCollector] = None
         self._rds_collector: Optional[BaseCollector] = None
         self._citrix_collector: Optional[BaseCollector] = None
+        self._prometheus: Optional[Any] = None
 
         self._last_alert_state: dict[str, HealthStatus] = {}
 
         self._setup_collectors()
+        self._setup_prometheus()
+
+    def _setup_prometheus(self) -> None:
+        prom_cfg = self.config.get("prometheus")
+        if not prom_cfg:
+            return
+        try:
+            from .exporters.prometheus import PrometheusExporter
+            self._prometheus = PrometheusExporter(prom_cfg)
+            self._prometheus.start_server()
+        except Exception as exc:
+            logger.error("Prometheus exporter failed to start: %s", exc)
 
     def _setup_collectors(self) -> None:
         if self.config.get("avd"):
@@ -117,6 +130,13 @@ class MonitoringEngine:
                 )
 
         self._evaluate_alerts(snap)
+
+        if self._prometheus:
+            try:
+                self._prometheus.update(snap)
+            except Exception as exc:
+                logger.error("Prometheus metrics update failed: %s", exc)
+
         return snap
 
     def _fire_alert(self, key: str, platform: str, resource: str, status: HealthStatus, message: str) -> None:

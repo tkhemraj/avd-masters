@@ -22,6 +22,16 @@ thresholds:
   citrix_unregistered_warn: 1  # unregistered VDAs per delivery group
   citrix_unregistered_crit: 3
 
+# ── Prometheus exporter (optional) ────────────────────────────────────────
+# Exposes /metrics for Prometheus scraping.
+# Run with: python -m avd_masters --exporter-only
+# Or alongside the TUI/headless mode by just adding this block.
+#
+# prometheus:
+#   port: 9090
+#   host: 0.0.0.0
+#   include_sessions: false  # true adds per-session labels (high cardinality)
+
 # ── Notifiers ──────────────────────────────────────────────────────────────
 notifiers:
   # Always-on console notifier (color-coded alerts in terminal)

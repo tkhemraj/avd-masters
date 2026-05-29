@@ -15,3 +15,6 @@ pywinrm>=0.4.3
 requests>=2.31
 # Optional NTLM auth for Citrix Director:
 # requests-ntlm>=1.2
+
+# Prometheus exporter (optional)
+prometheus_client>=0.20

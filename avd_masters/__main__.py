@@ -1,4 +1,4 @@
-"""Entry point: python -m avd_masters [--config path] [--once] [--no-dashboard]"""
+"""Entry point: python -m avd_masters [--config path] [--once] [--no-dashboard] [--exporter-only]"""
 
 from __future__ import annotations
 
@@ -32,6 +32,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--no-dashboard", action="store_true",
         help="Run headless (alerts only, no TUI)",
+    )
+    parser.add_argument(
+        "--exporter-only", action="store_true",
+        help="Run headless with Prometheus exporter only — no TUI, no console alerts",
     )
     parser.add_argument(
         "--log-level", default=None,
@@ -70,6 +74,29 @@ def main(argv: list[str] | None = None) -> int:
             return str(obj)
 
         print(json.dumps(dataclasses.asdict(snap), default=default, indent=2))
+        return 0
+
+    if args.exporter_only:
+        import time
+        interval = config.get("poll_interval_s", 60)
+        prom_cfg = config.get("prometheus", {})
+        port = prom_cfg.get("port", 9090)
+        if not config.get("prometheus"):
+            print(
+                "[ERROR] --exporter-only requires a prometheus: block in config.yaml",
+                file=sys.stderr,
+            )
+            return 1
+        logging.getLogger("avd_masters").info(
+            "Prometheus exporter mode — /metrics on :%s, polling every %ss. Ctrl+C to stop.",
+            port, interval,
+        )
+        try:
+            while True:
+                engine.collect()
+                time.sleep(interval)
+        except KeyboardInterrupt:
+            pass
         return 0
 
     if args.no_dashboard:
