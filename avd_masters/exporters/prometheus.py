@@ -43,10 +43,17 @@ def _sv(status: HealthStatus) -> float:
 class PrometheusExporter:
     def __init__(self, config: dict) -> None:
         self.port = int(config.get("port", 9090))
-        self.host = config.get("host", "0.0.0.0")
-        self.include_sessions = config.get("include_sessions", False)
+        self.host = config.get("host", "127.0.0.1")
         self._registry = self._build_registry()
         self._server_thread: Optional[threading.Thread] = None
+
+        if self.host == "0.0.0.0":
+            logger.warning(
+                "Prometheus /metrics is bound to 0.0.0.0:%s (all interfaces). "
+                "The endpoint is unauthenticated — ensure it is protected by a "
+                "firewall or reverse proxy in production.",
+                self.port,
+            )
 
     # ── Registry / metric definitions ────────────────────────────────────────
 

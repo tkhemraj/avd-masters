@@ -34,47 +34,32 @@ from ..models.metrics import (
     SessionState,
     UserSession,
 )
+from ..utils import sanitize_error
 from .base import BaseCollector, CollectorError
 
 logger = logging.getLogger(__name__)
 
-# WMI queries
-_WMI_OS = (
-    "SELECT Caption, LastBootUpTime FROM Win32_OperatingSystem"
-)
-_WMI_PERF_CPU = (
-    "SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor "
-    "WHERE Name='_Total'"
-)
-_WMI_PERF_MEM = (
-    "SELECT AvailableMBytes, TotalVisibleMemorySize FROM Win32_OperatingSystem"
-)
-_WMI_DISK = (
-    "SELECT DeviceID, FreeSpace, Size FROM Win32_LogicalDisk WHERE DriveType=3"
-)
-_WMI_SESSIONS = (
-    "SELECT SessionId, UserName, State, IdleTime, LogonTime "
-    "FROM Win32_LogonSession WHERE LogonType=10"
-)
-_WMI_TS_SESSIONS = (
-    "SELECT SessionName, UserName, State, SessionId "
-    "FROM Win32_TerminalServiceSetting"
-)
 
-# PowerShell snippets run over WinRM
-_PS_SESSIONS = (
-    "Get-RDUserSession -ConnectionBroker {broker} | "
-    "Select-Object UserName,HostServer,SessionState,IdleTime,LogonTime | "
-    "ConvertTo-Json -Compress"
-)
-_PS_SERVER_INFO = (
-    "Get-RDServer -ConnectionBroker {broker} -Role RDS-RD-SERVER | "
-    "Select-Object Server,Roles | ConvertTo-Json -Compress"
-)
+def _clamp_pct(value: str) -> Optional[float]:
+    """Parse a percentage string from WinRM output, clamped to [0, 100]."""
+    try:
+        v = float(value)
+        if v != v or v in (float("inf"), float("-inf")):  # NaN / inf guard
+            return None
+        return round(max(0.0, min(100.0, v)), 1)
+    except (ValueError, TypeError):
+        return None
+
+
+# PowerShell snippets executed over WinRM — no user-controlled interpolation
 _PS_LICENSE = (
-    "$lic = Get-WmiObject -Class Win32_TSLicenseKeyPack; "
+    "$lic = Get-CimInstance -ClassName Win32_TSLicenseKeyPack; "
     "$lic | Select-Object TotalLicenses,IssuedLicenses,KeyPackType | ConvertTo-Json -Compress"
 )
+
+# WinRM operation/read timeouts (seconds)
+_WINRM_OPERATION_TIMEOUT = 30
+_WINRM_READ_TIMEOUT = 60
 
 
 def _winrm_run(session, script: str) -> tuple[str, str, int]:
@@ -117,14 +102,30 @@ class RDSCollector(BaseCollector):
             ) from exc
 
         transport = self.config.get("winrm_transport", "ntlm")
-        port = self.config.get("winrm_port", 5985)
-        use_ssl = self.config.get("use_ssl", False)
+        port = self.config.get("winrm_port", 5986)
+        use_ssl = self.config.get("use_ssl", True)
         scheme = "https" if use_ssl else "http"
+
+        if not use_ssl:
+            self.logger.warning(
+                "WinRM connecting to %s over plain HTTP (use_ssl=false). "
+                "Credentials will be transmitted unencrypted. "
+                "Set use_ssl: true and winrm_port: 5986 for production.",
+                hostname,
+            )
+        if transport == "basic" and not use_ssl:
+            raise CollectorError(
+                f"Refusing to use WinRM basic auth without SSL on {hostname}. "
+                "Basic auth over HTTP sends credentials in Base64 (cleartext). "
+                "Set use_ssl: true or switch to ntlm/kerberos transport."
+            )
 
         return winrm.Session(
             f"{scheme}://{hostname}:{port}/wsman",
             auth=(self.config["winrm_username"], self.config["winrm_password"]),
             transport=transport,
+            operation_timeout_s=_WINRM_OPERATION_TIMEOUT,
+            read_timeout_s=_WINRM_READ_TIMEOUT,
         )
 
     def _collect_host_metrics(self, hostname: str) -> tuple[HealthStatus, ResourceMetrics, Optional[float]]:
@@ -144,30 +145,30 @@ class RDSCollector(BaseCollector):
             )
             stdout, _, rc = _winrm_run(session, cpu_ps)
             if rc == 0 and stdout:
-                metrics.cpu_percent = float(stdout.strip())
+                metrics.cpu_percent = _clamp_pct(stdout.strip())
 
             # Memory
             mem_ps = (
-                "$os=Get-WmiObject Win32_OperatingSystem; "
+                "$os=Get-CimInstance Win32_OperatingSystem; "
                 "[math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) "
                 "/ $os.TotalVisibleMemorySize * 100, 1)"
             )
             stdout, _, rc = _winrm_run(session, mem_ps)
             if rc == 0 and stdout:
-                metrics.memory_percent = float(stdout.strip())
+                metrics.memory_percent = _clamp_pct(stdout.strip())
 
             # Disk (C: drive)
             disk_ps = (
-                "$d=Get-WmiObject Win32_LogicalDisk -Filter \"DeviceID='C:'\"; "
+                "$d=Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='C:'\"; "
                 "[math]::Round(($d.Size - $d.FreeSpace) / $d.Size * 100, 1)"
             )
             stdout, _, rc = _winrm_run(session, disk_ps)
             if rc == 0 and stdout:
-                metrics.disk_percent = float(stdout.strip())
+                metrics.disk_percent = _clamp_pct(stdout.strip())
 
             # Uptime
             uptime_ps = (
-                "$boot=(Get-WmiObject Win32_OperatingSystem).LastBootUpTime; "
+                "$boot=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime; "
                 "$boot"
             )
             stdout, _, rc = _winrm_run(session, uptime_ps)
@@ -190,7 +191,7 @@ class RDSCollector(BaseCollector):
             return status, metrics, uptime_hours
 
         except Exception as exc:
-            self.logger.warning("Cannot reach host %s: %s", hostname, exc)
+            self.logger.warning("Cannot reach host %s: %s", hostname, sanitize_error(exc))
             return HealthStatus.OFFLINE, metrics, None
 
     def _collect_sessions(self, broker: str) -> list[UserSession]:
@@ -232,7 +233,7 @@ class RDSCollector(BaseCollector):
                     )
                 )
         except Exception as exc:
-            self.logger.warning("Failed to collect sessions from broker %s: %s", broker, exc)
+            self.logger.warning("Failed to collect sessions from broker %s: %s", broker, sanitize_error(exc))
 
         return sessions
 
@@ -257,7 +258,7 @@ class RDSCollector(BaseCollector):
                 available_cals=total - issued,
             )
         except Exception as exc:
-            self.logger.warning("Failed to collect license info from %s: %s", license_server, exc)
+            self.logger.warning("Failed to collect license info from %s: %s", license_server, sanitize_error(exc))
             return None
 
     def collect(self) -> RDSSnapshot:

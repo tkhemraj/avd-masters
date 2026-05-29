@@ -37,9 +37,13 @@ from ..models.metrics import (
     SessionState,
     UserSession,
 )
+from ..utils import sanitize_error
 from .base import BaseCollector, CollectorError
 
 logger = logging.getLogger(__name__)
+
+_WINRM_OPERATION_TIMEOUT = 30
+_WINRM_READ_TIMEOUT = 60
 
 
 def _map_reg_state(state: Optional[str]) -> HealthStatus:
@@ -86,7 +90,14 @@ class CitrixODataCollector(BaseCollector):
         import requests
 
         s = requests.Session()
-        s.verify = self.config.get("verify_ssl", True)
+        verify_ssl = self.config.get("verify_ssl", True)
+        s.verify = verify_ssl
+        if not verify_ssl:
+            self.logger.warning(
+                "SSL verification disabled for Citrix Director at %s. "
+                "Set verify_ssl: true in production to prevent MITM attacks.",
+                self.config.get("director_url", ""),
+            )
 
         username = self.config.get("username", "")
         password = self.config.get("password", "")
@@ -121,10 +132,16 @@ class CitrixODataCollector(BaseCollector):
         url = f"{self._director_url}/OData/v3/{endpoint.lstrip('/')}"
         try:
             resp = session.get(url, params=params, timeout=15)
+            if resp.status_code in (401, 403):
+                # Session expired — clear and retry once with a fresh auth
+                self.logger.info("Director session expired (%s), re-authenticating", resp.status_code)
+                self._session = None
+                session = self._get_session()
+                resp = session.get(url, params=params, timeout=15)
             resp.raise_for_status()
             return resp.json()
         except Exception as exc:
-            self.logger.error("OData request failed [%s]: %s", endpoint, exc)
+            self.logger.error("OData request failed [%s]: %s", endpoint, sanitize_error(exc))
             return None
 
     def _collect_delivery_groups(self) -> list[CitrixDeliveryGroup]:
@@ -221,7 +238,7 @@ class CitrixODataCollector(BaseCollector):
         try:
             snapshot.delivery_groups = self._collect_delivery_groups()
         except Exception as exc:
-            snapshot.errors.append(f"Delivery groups: {exc}")
+            snapshot.errors.append(f"Delivery groups: {sanitize_error(exc)}")
 
         try:
             machines = self._collect_machines()
@@ -232,17 +249,17 @@ class CitrixODataCollector(BaseCollector):
                 if dg:
                     dg.machines.append(machine)
         except Exception as exc:
-            snapshot.errors.append(f"Machines: {exc}")
+            snapshot.errors.append(f"Machines: {sanitize_error(exc)}")
 
         try:
             snapshot.user_sessions = self._collect_sessions()
         except Exception as exc:
-            snapshot.errors.append(f"Sessions: {exc}")
+            snapshot.errors.append(f"Sessions: {sanitize_error(exc)}")
 
         try:
             snapshot.controllers = self._collect_controllers()
         except Exception as exc:
-            snapshot.errors.append(f"Controllers: {exc}")
+            snapshot.errors.append(f"Controllers: {sanitize_error(exc)}")
 
         return snapshot
 
@@ -262,11 +279,28 @@ class CitrixWinRMCollector(BaseCollector):
             raise CollectorError("pywinrm not installed. Run: pip install pywinrm") from exc
 
         transport = self.config.get("winrm_transport", "ntlm")
-        port = self.config.get("winrm_port", 5985)
+        port = self.config.get("winrm_port", 5986)
+        use_ssl = self.config.get("use_ssl", True)
+        scheme = "https" if use_ssl else "http"
+
+        if not use_ssl:
+            self.logger.warning(
+                "WinRM connecting to %s over plain HTTP (use_ssl=false). "
+                "Credentials will be transmitted unencrypted.",
+                hostname,
+            )
+        if transport == "basic" and not use_ssl:
+            raise CollectorError(
+                f"Refusing basic auth without SSL on {hostname}. "
+                "Set use_ssl: true or switch to ntlm/kerberos."
+            )
+
         return winrm.Session(
-            f"http://{hostname}:{port}/wsman",
+            f"{scheme}://{hostname}:{port}/wsman",
             auth=(self.config["winrm_username"], self.config["winrm_password"]),
             transport=transport,
+            operation_timeout_s=_WINRM_OPERATION_TIMEOUT,
+            read_timeout_s=_WINRM_READ_TIMEOUT,
         )
 
     def _run_ps(self, hostname: str, script: str) -> tuple[str, int]:
@@ -311,7 +345,7 @@ class CitrixWinRMCollector(BaseCollector):
                         )
                     )
         except Exception as exc:
-            snapshot.errors.append(f"Delivery groups (WinRM): {exc}")
+            snapshot.errors.append(f"Delivery groups (WinRM): {sanitize_error(exc)}")
 
         try:
             ps = (
@@ -333,7 +367,7 @@ class CitrixWinRMCollector(BaseCollector):
                         )
                     )
         except Exception as exc:
-            snapshot.errors.append(f"Controllers (WinRM): {exc}")
+            snapshot.errors.append(f"Controllers (WinRM): {sanitize_error(exc)}")
 
         return snapshot
 

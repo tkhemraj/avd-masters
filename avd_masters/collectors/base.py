@@ -30,5 +30,8 @@ class BaseCollector(ABC):
         except CollectorError:
             raise
         except Exception as exc:
-            self.logger.error("Unexpected error during collection: %s", exc, exc_info=True)
+            # exc_info only at DEBUG — full stack traces can contain local vars
+            # including config dicts that hold credentials.
+            self.logger.error("Unexpected error during collection: %s", exc)
+            self.logger.debug("Collection traceback:", exc_info=True)
             raise CollectorError(str(exc)) from exc

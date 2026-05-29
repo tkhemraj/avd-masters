@@ -28,6 +28,7 @@ from ..models.metrics import (
     SessionState,
     UserSession,
 )
+from ..utils import sanitize_error
 from .base import BaseCollector, CollectorError
 
 logger = logging.getLogger(__name__)
@@ -140,7 +141,7 @@ class AVDCollector(BaseCollector):
         try:
             all_pools = list(client.host_pools.list())
         except Exception as exc:
-            snapshot.errors.append(f"Failed to list host pools: {exc}")
+            snapshot.errors.append(f"Failed to list host pools: {sanitize_error(exc)}")
             return snapshot
 
         for pool in all_pools:
@@ -182,7 +183,7 @@ class AVDCollector(BaseCollector):
 
                     avd_pool.hosts.append(avd_host)
             except Exception as exc:
-                snapshot.errors.append(f"Failed to list session hosts for {pool.name}: {exc}")
+                snapshot.errors.append(f"Failed to list session hosts for {pool.name}: {sanitize_error(exc)}")
 
             try:
                 sessions = list(client.user_sessions.list_by_host_pool(rg, pool.name))
@@ -201,7 +202,7 @@ class AVDCollector(BaseCollector):
                         )
                     )
             except Exception as exc:
-                snapshot.errors.append(f"Failed to list user sessions for {pool.name}: {exc}")
+                snapshot.errors.append(f"Failed to list user sessions for {pool.name}: {sanitize_error(exc)}")
 
             snapshot.host_pools.append(avd_pool)
 

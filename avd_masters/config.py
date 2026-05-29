@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import logging
+import stat
 from pathlib import Path
 from typing import Any
+
+from .utils import resolve_env_vars
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +32,22 @@ def load_config(path: str | Path = "config.yaml") -> dict[str, Any]:
         logger.warning("Config file not found at %s — using defaults", config_path)
         return dict(_DEFAULT_CONFIG)
 
+    # Warn if the file is group- or world-readable (credentials inside)
+    file_mode = config_path.stat().st_mode
+    if file_mode & (stat.S_IRGRP | stat.S_IROTH):
+        logger.warning(
+            "Config file %s is readable by group/others (mode %s). "
+            "Run: chmod 600 %s",
+            config_path,
+            oct(stat.S_IMODE(file_mode)),
+            config_path,
+        )
+
     with open(config_path) as f:
         raw: dict[str, Any] = yaml.safe_load(f) or {}
+
+    # Resolve ${ENV_VAR} placeholders — raises ValueError if a var is unset
+    raw = resolve_env_vars(raw)
 
     merged = {**_DEFAULT_CONFIG, **raw}
 
@@ -71,8 +88,9 @@ def validate_config(config: dict[str, Any]) -> list[str]:
             if not citrix.get("username"):
                 errors.append("citrix.username is required")
 
-        if "teams" in config.get("notifiers", {}):
-            if not config["notifiers"]["teams"].get("webhook_url"):
-                errors.append("notifiers.teams.webhook_url is required")
+    # Teams notifier validation is independent of which platforms are enabled
+    if "teams" in config.get("notifiers", {}):
+        if not config["notifiers"]["teams"].get("webhook_url"):
+            errors.append("notifiers.teams.webhook_url is required")
 
     return errors

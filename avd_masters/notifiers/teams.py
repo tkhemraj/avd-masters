@@ -37,11 +37,23 @@ class TeamsNotifier(BaseNotifier):
         super().__init__(config)
         if not config.get("webhook_url"):
             raise ValueError("teams notifier requires webhook_url in config")
+        self._session: Any = None
+
+    def _get_session(self):
+        if self._session is None:
+            try:
+                import requests
+            except ImportError as exc:
+                raise RuntimeError("requests not installed") from exc
+            s = requests.Session()
+            s.verify = True  # explicit — never silently disabled by env vars
+            self._session = s
+        return self._session
 
     def notify(self, alert: Alert) -> None:
         try:
-            import requests
-        except ImportError as exc:
+            session = self._get_session()
+        except RuntimeError:
             logger.error("requests not installed — cannot send Teams notification")
             return
 
@@ -69,7 +81,7 @@ class TeamsNotifier(BaseNotifier):
         }
 
         try:
-            resp = requests.post(
+            resp = session.post(
                 self.config["webhook_url"],
                 json=payload,
                 timeout=10,

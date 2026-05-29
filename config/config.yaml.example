@@ -1,5 +1,15 @@
 # AVD Masters Suite — Example Configuration
 # Copy to config.yaml and fill in your values.
+#
+# SECURITY: config.yaml contains credentials — protect it:
+#   chmod 600 config.yaml
+#   Add config.yaml to .gitignore (already done in the repo default)
+#
+# Environment variable substitution: any string value can reference an
+# environment variable using ${VAR_NAME} syntax. The process will refuse
+# to start if a referenced variable is not set. Example:
+#   winrm_password: "${RDS_PASSWORD}"
+#   webhook_url: "${TEAMS_WEBHOOK_URL}"
 
 # Global poll interval in seconds (can be overridden per platform)
 poll_interval_s: 60
@@ -38,8 +48,9 @@ notifiers:
   console: {}
 
   # Optional: MS Teams incoming webhook
+  # Store the URL in an env var — never commit it to source control.
   # teams:
-  #   webhook_url: "https://outlook.office.com/webhook/..."
+  #   webhook_url: "${TEAMS_WEBHOOK_URL}"
 
 # ── Azure Virtual Desktop ──────────────────────────────────────────────────
 # Credentials via DefaultAzureCredential:
@@ -75,10 +86,10 @@ rds:
   # license_server: rdlicense01.corp.local
 
   winrm_username: "CORP\\svc-monitoring"
-  winrm_password: "CHANGE_ME"
-  winrm_transport: ntlm   # ntlm | kerberos | basic
-  winrm_port: 5985
-  use_ssl: false
+  winrm_password: "${RDS_PASSWORD}"      # set RDS_PASSWORD env var
+  winrm_transport: ntlm   # ntlm | kerberos — do NOT use basic without SSL
+  winrm_port: 5986         # 5986 = HTTPS (default), 5985 = HTTP (insecure)
+  use_ssl: true            # default true — set false only for lab/testing
 
   poll_interval_s: 60
 
@@ -89,9 +100,9 @@ citrix:
   # Option A: Citrix Director OData API (recommended)
   director_url: "https://citrix-director.corp.local/Director"
   username: "CORP\\svc-monitoring"
-  password: "CHANGE_ME"
-  auth_transport: ntlm    # ntlm | basic
-  verify_ssl: true
+  password: "${CITRIX_PASSWORD}"    # set CITRIX_PASSWORD env var
+  auth_transport: ntlm    # ntlm | basic — do NOT use basic without TLS
+  verify_ssl: true         # never set false in production
 
   # Option B: WinRM + PowerShell Broker SDK (set use_winrm: true)
   # use_winrm: true
