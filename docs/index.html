@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AVD Masters Suite — Unified VDI Monitoring</title>
+  <title>VirtualDesktopMasters — Unified VDI Monitoring</title>
   <meta name="description" content="Open-source Python monitoring suite for Azure Virtual Desktop, RDS Terminal Services, and Citrix VDI. Live TUI dashboard, Prometheus exporter, Grafana dashboards, Alertmanager Teams notifications, best-practice analysis, and GPU/vGPU slice ROI monitoring.">
-  <meta property="og:title" content="AVD Masters Suite">
+  <meta property="og:title" content="VirtualDesktopMasters">
   <meta property="og:description" content="Unified monitoring for Azure Virtual Desktop, RDS, and Citrix VDI — including GPU/vGPU slice analysis.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://avdmasters.github.io">
+  <meta property="og:url" content="https://tkhemraj.github.io/avd-masters">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
 <!-- ── Nav ── -->
 <nav>
   <div class="nav-inner">
-    <span class="nav-logo">avd<span>masters</span>.suite</span>
+    <span class="nav-logo">Virtual<span>Desktop</span>Masters</span>
     <ul class="nav-links">
       <li><a href="#platforms">Platforms</a></li>
       <li><a href="#features">Features</a></li>
@@ -29,7 +29,7 @@
       <li><a href="#quickstart">Quick Start</a></li>
       <li><a href="#reference">Reference</a></li>
     </ul>
-    <a href="https://github.com/avdmasters/avd-masters" class="nav-github">
+    <a href="https://github.com/tkhemraj/avd-masters" class="nav-github">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
       GitHub
     </a>
@@ -42,7 +42,7 @@
     <div class="hero-eyebrow">
       <span>●</span> Python 3.11+ · Open Source · MIT Licence
     </div>
-    <h1 class="hero-title">AVD Masters Suite</h1>
+    <h1 class="hero-title">VirtualDesktopMasters</h1>
     <p class="hero-sub">
       Unified monitoring, GPU slice ROI analysis, and best-practice compliance for
       <strong style="color:#58a6ff">Azure Virtual Desktop</strong>,
@@ -51,7 +51,7 @@
     </p>
     <div class="hero-actions">
       <a href="#quickstart" class="btn btn-primary">Get Started →</a>
-      <a href="https://github.com/avdmasters/avd-masters" class="btn btn-secondary">View on GitHub</a>
+      <a href="https://github.com/tkhemraj/avd-masters" class="btn btn-secondary">View on GitHub</a>
       <a href="#metrics" class="btn btn-secondary">Metrics Reference</a>
     </div>
     <div class="badges">
@@ -69,7 +69,7 @@
         <div class="tbar-dot red"></div>
         <div class="tbar-dot yellow"></div>
         <div class="tbar-dot green"></div>
-        <span class="tbar-title">avd-masters — live dashboard</span>
+        <span class="tbar-title">VirtualDesktopMasters — live dashboard</span>
       </div>
       <div class="terminal-body"><span class="t-blue t-bold">╭─────────────────────────────────────────────────────────────────────────────────────╮</span>
 <span class="t-blue t-bold">│</span> <span class="t-white t-bold">AVD MASTERS SUITE</span>  <span class="t-yellow t-bold">▲ WARNING</span>  <span class="t-dim">[2026-05-29 22:27:40 UTC]</span>                                <span class="t-blue t-bold">│</span>
@@ -372,6 +372,9 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
     <p class="section-eyebrow">Prometheus Metrics</p>
     <h2 class="section-title">73+ metric samples per scrape</h2>
     <p class="section-sub">Status gauges use numeric encoding: <code>0=ok · 1=warning · 2=critical · 3=unknown · 4=offline</code></p>
+    <p class="section-sub mt-2" style="font-size:0.8rem;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:10px 14px;color:var(--muted)">
+      ℹ️ Metric names currently use the <code>avd_masters_</code> prefix — this is the CI pipeline name and will be updated to <code>vdm_</code> in a future release. Existing Prometheus rules and Grafana dashboards will continue to work until the migration is complete.
+    </p>
 
     <table class="metrics-table mt-8">
       <thead>
@@ -491,6 +494,9 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
     <p class="section-eyebrow">Get Running</p>
     <h2 class="section-title">Up in five minutes</h2>
     <p class="section-sub">Python 3.11+, a config file, and WinRM access to your Windows hosts.</p>
+    <p class="section-sub mt-2" style="font-size:0.8rem;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:10px 14px;color:var(--muted)">
+      ℹ️ CLI commands currently use <code>python -m avd_masters</code> — the module name is a CI pipeline reference and will be renamed to <code>vdm</code> in a future release.
+    </p>
 
     <div class="steps">
       <div class="step">
@@ -499,7 +505,7 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
           <h3>Install</h3>
           <div class="code-block">
             <div class="code-header"><span>shell</span></div>
-            <div class="code-body"><span class="c-cmd">git clone</span> https://github.com/avdmasters/avd-masters.git
+            <div class="code-body"><span class="c-cmd">git clone</span> https://github.com/tkhemraj/avd-masters.git
 <span class="c-cmd">cd</span> avd-masters
 <span class="c-cmd">pip install</span> -r requirements.txt</div>
           </div>
@@ -577,7 +583,7 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
     <p class="section-eyebrow">Architecture</p>
     <h2 class="section-title">How it fits together</h2>
 
-    <div class="arch-diagram"><span class="a-bright">                        AVD Masters Suite</span>
+    <div class="arch-diagram"><span class="a-bright">                        VirtualDesktopMasters</span>
 <span class="a-bright">  ┌──────────────────────────────────────────────────────────────┐</span>
   │                                                              │
   │  <span class="a-avd">┌─────────────────┐</span>  <span class="a-rds">┌──────────────────┐</span>  <span class="a-citrix">┌──────────────┐</span>  │
@@ -691,14 +697,14 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
 <!-- ── Footer ── -->
 <footer>
   <div class="container">
-    <p style="color:var(--muted)">AVD Masters Suite · MIT Licence</p>
+    <p style="color:var(--muted)">VirtualDesktopMasters · MIT Licence</p>
     <p class="mt-2" style="font-size:0.8rem">Built for engineers who run AVD, RDS, and Citrix in the same shop and are tired of three separate consoles.</p>
     <ul class="footer-links">
-      <li><a href="https://github.com/avdmasters/avd-masters">GitHub</a></li>
-      <li><a href="https://github.com/avdmasters/avd-masters/issues">Issues</a></li>
-      <li><a href="https://github.com/avdmasters/avd-masters/blob/master/config/config.yaml.example">config.yaml.example</a></li>
-      <li><a href="https://github.com/avdmasters/avd-masters/tree/master/prometheus/alerts">Alert Rules</a></li>
-      <li><a href="https://github.com/avdmasters/avd-masters/blob/master/grafana/avd_masters_dashboard.json">Grafana JSON</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters">GitHub</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters/issues">Issues</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters/blob/master/config/config.yaml.example">config.yaml.example</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters/tree/master/prometheus/alerts">Alert Rules</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters/blob/master/grafana/avd_masters_dashboard.json">Grafana JSON</a></li>
     </ul>
   </div>
 </footer>
