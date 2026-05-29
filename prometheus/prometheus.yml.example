@@ -1,0 +1,33 @@
+# Example prometheus.yml showing how to wire up AVD Masters scraping and alerts.
+# Merge the relevant sections into your existing prometheus.yml.
+
+global:
+  scrape_interval:     15s
+  evaluation_interval: 60s
+  external_labels:
+    environment: production
+
+rule_files:
+  - /etc/prometheus/alerts/avd_masters.yml
+
+# Alertmanager — adjust to your deployment
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+
+  # AVD Masters Suite exporter
+  - job_name: avd_masters
+    static_configs:
+      - targets: ["avd-masters-host:9090"]
+        labels:
+          env: production
+    # If you run multiple instances (one per datacenter/region), use:
+    # - targets:
+    #     - avd-masters-dc1:9090
+    #     - avd-masters-dc2:9090
+    scrape_interval: 60s   # match poll_interval_s in config.yaml
+    scrape_timeout:  30s
+    metrics_path: /metrics

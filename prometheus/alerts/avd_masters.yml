@@ -1,0 +1,421 @@
+---
+# AVD Masters Suite — Prometheus Alerting Rules
+#
+# Status gauge encoding (used across all platforms):
+#   0 = OK  |  1 = WARNING  |  2 = CRITICAL  |  3 = UNKNOWN  |  4 = OFFLINE
+#
+# Reference in prometheus.yml:
+#   rule_files:
+#     - /etc/prometheus/alerts/avd_masters.yml
+
+groups:
+
+  # ── Azure Virtual Desktop ────────────────────────────────────────────────
+  - name: avd_masters.avd
+    interval: 60s
+    rules:
+
+      - alert: AVDSessionHostOffline
+        expr: avd_session_host_status == 4
+        for: 2m
+        labels:
+          severity: critical
+          platform: avd
+        annotations:
+          summary: "AVD session host offline: {{ $labels.host }}"
+          description: >
+            Session host {{ $labels.host }} in host pool {{ $labels.host_pool }}
+            has been unreachable for more than 2 minutes.
+            Users may be unable to connect or reconnect to this host.
+
+      - alert: AVDSessionHostCritical
+        expr: avd_session_host_status == 2
+        for: 2m
+        labels:
+          severity: critical
+          platform: avd
+        annotations:
+          summary: "AVD session host critical: {{ $labels.host }}"
+          description: >
+            Session host {{ $labels.host }} in host pool {{ $labels.host_pool }}
+            is reporting a critical health status.
+            Check the AVD session host blade in the Azure portal for details.
+
+      - alert: AVDSessionHostWarning
+        expr: avd_session_host_status == 1
+        for: 10m
+        labels:
+          severity: warning
+          platform: avd
+        annotations:
+          summary: "AVD session host degraded: {{ $labels.host }}"
+          description: >
+            Session host {{ $labels.host }} in host pool {{ $labels.host_pool }}
+            has been in a warning state for more than 10 minutes.
+
+      - alert: AVDSessionHostHighCPU
+        expr: avd_session_host_cpu_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          platform: avd
+        annotations:
+          summary: "AVD session host CPU critical: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            Session host {{ $labels.host }} (pool: {{ $labels.host_pool }}) CPU
+            has been above 90% for 5 minutes. Current: {{ $value | printf "%.1f" }}%.
+            New session connections will be degraded.
+
+      - alert: AVDSessionHostHighCPUWarning
+        expr: avd_session_host_cpu_percent > 75
+        for: 10m
+        labels:
+          severity: warning
+          platform: avd
+        annotations:
+          summary: "AVD session host CPU elevated: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            Session host {{ $labels.host }} (pool: {{ $labels.host_pool }}) CPU
+            has been above 75% for 10 minutes. Current: {{ $value | printf "%.1f" }}%.
+
+      - alert: AVDSessionHostHighMemory
+        expr: avd_session_host_memory_percent > 95
+        for: 5m
+        labels:
+          severity: critical
+          platform: avd
+        annotations:
+          summary: "AVD session host memory critical: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            Session host {{ $labels.host }} (pool: {{ $labels.host_pool }}) memory
+            has been above 95% for 5 minutes. Current: {{ $value | printf "%.1f" }}%.
+            Risk of OOM and session failures.
+
+      - alert: AVDSessionHostHighMemoryWarning
+        expr: avd_session_host_memory_percent > 85
+        for: 10m
+        labels:
+          severity: warning
+          platform: avd
+        annotations:
+          summary: "AVD session host memory elevated: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            Session host {{ $labels.host }} (pool: {{ $labels.host_pool }}) memory
+            has been above 85% for 10 minutes. Current: {{ $value | printf "%.1f" }}%.
+
+      - alert: AVDHostPoolNoAvailableHosts
+        expr: avd_host_pool_available_hosts == 0
+        for: 3m
+        labels:
+          severity: critical
+          platform: avd
+        annotations:
+          summary: "AVD host pool has no available hosts: {{ $labels.host_pool }}"
+          description: >
+            Host pool {{ $labels.host_pool }} ({{ $labels.resource_group }}) has
+            no session hosts accepting new connections. All hosts are either
+            offline, draining, or at capacity. New user logons will fail.
+
+      - alert: AVDHostPoolDegraded
+        expr: >
+          (avd_host_pool_available_hosts / avd_host_pool_total_hosts) < 0.5
+          and avd_host_pool_total_hosts > 0
+        for: 5m
+        labels:
+          severity: warning
+          platform: avd
+        annotations:
+          summary: "AVD host pool degraded: {{ $labels.host_pool }} ({{ $value | humanizePercentage }} available)"
+          description: >
+            Less than 50% of session hosts in pool {{ $labels.host_pool }}
+            are available for new connections.
+            Available: {{ $value | humanizePercentage }} of total hosts.
+
+
+  # ── Terminal Services (RDS) ──────────────────────────────────────────────
+  - name: avd_masters.rds
+    interval: 60s
+    rules:
+
+      - alert: RDSSessionHostOffline
+        expr: rds_session_host_status == 4
+        for: 2m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS session host offline: {{ $labels.host }}"
+          description: >
+            RDS session host {{ $labels.host }} (farm: {{ $labels.farm }})
+            has been unreachable for more than 2 minutes.
+            Active sessions on this host may have been dropped.
+
+      - alert: RDSSessionHostCritical
+        expr: rds_session_host_status == 2
+        for: 2m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS session host critical: {{ $labels.host }}"
+          description: >
+            RDS session host {{ $labels.host }} (farm: {{ $labels.farm }})
+            is reporting a critical status. Check CPU, memory, and disk.
+
+      - alert: RDSSessionHostHighCPU
+        expr: rds_session_host_cpu_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS host CPU critical: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} CPU has been above 90% for 5 minutes.
+            Current: {{ $value | printf "%.1f" }}%.
+            User sessions will experience severe performance degradation.
+
+      - alert: RDSSessionHostHighCPUWarning
+        expr: rds_session_host_cpu_percent > 75
+        for: 10m
+        labels:
+          severity: warning
+          platform: rds
+        annotations:
+          summary: "RDS host CPU elevated: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} CPU has been above 75% for 10 minutes.
+            Current: {{ $value | printf "%.1f" }}%.
+
+      - alert: RDSSessionHostHighMemory
+        expr: rds_session_host_memory_percent > 95
+        for: 5m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS host memory critical: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} memory has been above 95% for 5 minutes.
+            Current: {{ $value | printf "%.1f" }}%.
+            Risk of OOM kills and session failures.
+
+      - alert: RDSSessionHostHighMemoryWarning
+        expr: rds_session_host_memory_percent > 85
+        for: 10m
+        labels:
+          severity: warning
+          platform: rds
+        annotations:
+          summary: "RDS host memory elevated: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} memory has been above 85% for 10 minutes.
+            Current: {{ $value | printf "%.1f" }}%.
+
+      - alert: RDSSessionHostDiskCritical
+        expr: rds_session_host_disk_percent > 95
+        for: 5m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS host disk critical: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} C: drive is {{ $value | printf "%.1f" }}% full.
+            The server may stop accepting new sessions or crash imminently.
+            Free up disk space immediately.
+
+      - alert: RDSSessionHostDiskWarning
+        expr: rds_session_host_disk_percent > 80
+        for: 15m
+        labels:
+          severity: warning
+          platform: rds
+        annotations:
+          summary: "RDS host disk filling: {{ $labels.host }} ({{ $value | printf \"%.1f\" }}%)"
+          description: >
+            {{ $labels.host }} C: drive is {{ $value | printf "%.1f" }}% full.
+
+      - alert: RDSLicenseCritical
+        expr: rds_license_utilization_percent > 95
+        for: 15m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS CAL pool critical: {{ $labels.server }} ({{ $value | printf \"%.1f\" }}% used)"
+          description: >
+            RDS license server {{ $labels.server }} has issued
+            {{ $value | printf "%.1f" }}% of available CALs.
+            New user connections will be refused when the pool is exhausted.
+            Add more CALs or remove inactive assignments.
+
+      - alert: RDSLicenseWarning
+        expr: rds_license_utilization_percent > 80
+        for: 30m
+        labels:
+          severity: warning
+          platform: rds
+        annotations:
+          summary: "RDS CAL pool filling: {{ $labels.server }} ({{ $value | printf \"%.1f\" }}% used)"
+          description: >
+            RDS license server {{ $labels.server }} has issued
+            {{ $value | printf "%.1f" }}% of available CALs.
+            Plan for additional CAL capacity.
+
+      - alert: RDSBrokerDown
+        expr: rds_broker_status >= 2
+        for: 2m
+        labels:
+          severity: critical
+          platform: rds
+        annotations:
+          summary: "RDS Connection Broker down: {{ $labels.broker }}"
+          description: >
+            RD Connection Broker {{ $labels.broker }} (farm: {{ $labels.farm }})
+            is reporting a critical or offline status.
+            Load balancing and session reconnection will be impaired.
+
+
+  # ── Citrix VDI ───────────────────────────────────────────────────────────
+  - name: avd_masters.citrix
+    interval: 60s
+    rules:
+
+      - alert: CitrixDeliveryControllerDown
+        expr: citrix_controller_status >= 2
+        for: 2m
+        labels:
+          severity: critical
+          platform: citrix
+        annotations:
+          summary: "Citrix Delivery Controller down: {{ $labels.controller }}"
+          description: >
+            Delivery Controller {{ $labels.controller }} (site: {{ $labels.site }})
+            is in a critical or offline state.
+            VDA registration and session brokering may be affected.
+
+      - alert: CitrixDeliveryGroupMajorOutage
+        expr: >
+          (citrix_delivery_group_total_machines - citrix_delivery_group_registered_machines)
+          / citrix_delivery_group_total_machines > 0.5
+          and citrix_delivery_group_total_machines > 0
+        for: 5m
+        labels:
+          severity: critical
+          platform: citrix
+        annotations:
+          summary: >
+            Citrix delivery group major outage: {{ $labels.delivery_group }}
+            ({{ $value | humanizePercentage }} VDAs unregistered)
+          description: >
+            More than 50% of VDAs in delivery group {{ $labels.delivery_group }}
+            (site: {{ $labels.site }}) are unregistered.
+            Users will be unable to launch new sessions for many applications.
+
+      - alert: CitrixUnregisteredVDAs
+        expr: >
+          (citrix_delivery_group_total_machines - citrix_delivery_group_registered_machines)
+          >= 3
+        for: 5m
+        labels:
+          severity: warning
+          platform: citrix
+        annotations:
+          summary: >
+            Citrix unregistered VDAs: {{ $labels.delivery_group }}
+            ({{ $value | printf "%.0f" }} unregistered)
+          description: >
+            {{ $value | printf "%.0f" }} VDAs in delivery group
+            {{ $labels.delivery_group }} (site: {{ $labels.site }}) are unregistered.
+            Check VDA health in Citrix Studio or Director.
+
+      - alert: CitrixUnregisteredVDAWarning
+        expr: >
+          (citrix_delivery_group_total_machines - citrix_delivery_group_registered_machines)
+          >= 1
+          and
+          (citrix_delivery_group_total_machines - citrix_delivery_group_registered_machines)
+          < 3
+        for: 10m
+        labels:
+          severity: warning
+          platform: citrix
+        annotations:
+          summary: >
+            Citrix VDA unregistered: {{ $labels.delivery_group }}
+            ({{ $value | printf "%.0f" }} unregistered)
+          description: >
+            {{ $value | printf "%.0f" }} VDA(s) in delivery group
+            {{ $labels.delivery_group }} have been unregistered for 10 minutes.
+
+      - alert: CitrixDeliveryGroupDown
+        expr: citrix_delivery_group_status == 2
+        for: 3m
+        labels:
+          severity: critical
+          platform: citrix
+        annotations:
+          summary: "Citrix delivery group critical: {{ $labels.delivery_group }}"
+          description: >
+            Delivery group {{ $labels.delivery_group }} (site: {{ $labels.site }})
+            is in a critical state. Session launches will fail.
+
+      - alert: CitrixNoRegisteredVDAs
+        expr: citrix_delivery_group_registered_machines == 0 and citrix_delivery_group_total_machines > 0
+        for: 3m
+        labels:
+          severity: critical
+          platform: citrix
+        annotations:
+          summary: "Citrix delivery group has no registered VDAs: {{ $labels.delivery_group }}"
+          description: >
+            Delivery group {{ $labels.delivery_group }} (site: {{ $labels.site }})
+            has 0 registered VDAs out of {{ $labels.total }} total machines.
+            No users can launch sessions from this group.
+
+
+  # ── Infrastructure / meta ────────────────────────────────────────────────
+  - name: avd_masters.meta
+    interval: 60s
+    rules:
+
+      - alert: AVDMastersDataStale
+        expr: time() - avd_masters_last_collection_timestamp_seconds > 300
+        for: 0m
+        labels:
+          severity: warning
+          platform: "{{ $labels.platform }}"
+        annotations:
+          summary: "AVD Masters data stale for platform: {{ $labels.platform }}"
+          description: >
+            No successful collection has been recorded for the
+            {{ $labels.platform }} platform in the last 5 minutes.
+            Last collection was {{ $value | humanizeDuration }} ago.
+            Check the avd-masters process and connectivity to the platform.
+
+      - alert: AVDMastersDataStaleCritical
+        expr: time() - avd_masters_last_collection_timestamp_seconds > 600
+        for: 0m
+        labels:
+          severity: critical
+          platform: "{{ $labels.platform }}"
+        annotations:
+          summary: "AVD Masters data critically stale: {{ $labels.platform }}"
+          description: >
+            No successful collection for the {{ $labels.platform }} platform
+            in more than 10 minutes. Dashboard data is unreliable.
+            Last seen {{ $value | humanizeDuration }} ago.
+
+      - alert: AVDMastersHighErrorRate
+        expr: increase(avd_masters_collection_errors_total[15m]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          platform: "{{ $labels.platform }}"
+        annotations:
+          summary: "AVD Masters collection errors: {{ $labels.platform }} ({{ $value | printf \"%.0f\" }} in 15m)"
+          description: >
+            The {{ $labels.platform }} collector has encountered
+            {{ $value | printf "%.0f" }} errors in the last 15 minutes.
+            Collections may be returning incomplete or no data.
