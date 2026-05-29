@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "avd-masters"
+version = "0.1.0"
+description = "Unified monitoring suite for Azure Virtual Desktop, RDS, and Citrix VDI"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "azure-identity>=1.15",
+    "azure-mgmt-desktopvirtualization>=1.0",
+    "azure-mgmt-monitor>=6.0",
+    "azure-mgmt-compute>=30.0",
+    "pywinrm>=0.4.3",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+ntlm = ["requests-ntlm>=1.2"]
+dev = ["pytest>=8.0", "pytest-mock>=3.12"]
+
+[project.scripts]
+avd-masters = "avd_masters.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["avd_masters*"]

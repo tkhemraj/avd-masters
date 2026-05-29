@@ -1,0 +1,93 @@
+# AVD Masters Suite — Example Configuration
+# Copy to config.yaml and fill in your values.
+
+# Global poll interval in seconds (can be overridden per platform)
+poll_interval_s: 60
+
+# Logging: DEBUG | INFO | WARNING | ERROR
+log_level: INFO
+
+# ── Alert thresholds (optional — these are the defaults) ──────────────────
+thresholds:
+  avd_host_cpu_warn: 75.0
+  avd_host_cpu_crit: 90.0
+  avd_host_mem_warn: 85.0
+  avd_host_mem_crit: 95.0
+  rds_host_cpu_warn: 75.0
+  rds_host_cpu_crit: 90.0
+  rds_host_mem_warn: 85.0
+  rds_host_mem_crit: 95.0
+  rds_license_warn: 80.0     # % CAL utilization
+  rds_license_crit: 95.0
+  citrix_unregistered_warn: 1  # unregistered VDAs per delivery group
+  citrix_unregistered_crit: 3
+
+# ── Notifiers ──────────────────────────────────────────────────────────────
+notifiers:
+  # Always-on console notifier (color-coded alerts in terminal)
+  console: {}
+
+  # Optional: MS Teams incoming webhook
+  # teams:
+  #   webhook_url: "https://outlook.office.com/webhook/..."
+
+# ── Azure Virtual Desktop ──────────────────────────────────────────────────
+# Credentials via DefaultAzureCredential:
+#   - Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID env vars
+#     for a service principal, OR
+#   - Run `az login` for interactive auth
+avd:
+  subscription_id: "00000000-0000-0000-0000-000000000000"
+
+  # Optional: limit to specific resource groups (omit to scan all)
+  # resource_groups:
+  #   - rg-avd-prod
+  #   - rg-avd-dev
+
+  poll_interval_s: 60
+
+# ── On-Premises Terminal Services (RDS) ───────────────────────────────────
+rds:
+  farm_name: "Production RDS Farm"
+
+  # All session hosts AND brokers
+  hosts:
+    - rdsh01.corp.local
+    - rdsh02.corp.local
+    - rdsh03.corp.local
+    - rdbroker01.corp.local
+
+  # Subset of hosts that are RD Connection Brokers
+  broker_hosts:
+    - rdbroker01.corp.local
+
+  # Optional RD Licensing server
+  # license_server: rdlicense01.corp.local
+
+  winrm_username: "CORP\\svc-monitoring"
+  winrm_password: "CHANGE_ME"
+  winrm_transport: ntlm   # ntlm | kerberos | basic
+  winrm_port: 5985
+  use_ssl: false
+
+  poll_interval_s: 60
+
+# ── Citrix VDI ─────────────────────────────────────────────────────────────
+citrix:
+  site_name: "Production Citrix Site"
+
+  # Option A: Citrix Director OData API (recommended)
+  director_url: "https://citrix-director.corp.local/Director"
+  username: "CORP\\svc-monitoring"
+  password: "CHANGE_ME"
+  auth_transport: ntlm    # ntlm | basic
+  verify_ssl: true
+
+  # Option B: WinRM + PowerShell Broker SDK (set use_winrm: true)
+  # use_winrm: true
+  # winrm_host: ddc01.corp.local
+  # winrm_username: "CORP\\svc-monitoring"
+  # winrm_password: "CHANGE_ME"
+  # winrm_transport: ntlm
+
+  poll_interval_s: 60

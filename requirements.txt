@@ -1,0 +1,17 @@
+# Core
+pyyaml>=6.0
+rich>=13.0
+
+# Azure Virtual Desktop
+azure-identity>=1.15
+azure-mgmt-desktopvirtualization>=1.0
+azure-mgmt-monitor>=6.0
+azure-mgmt-compute>=30.0
+
+# On-Premises RDS (WinRM)
+pywinrm>=0.4.3
+
+# Citrix (OData API)
+requests>=2.31
+# Optional NTLM auth for Citrix Director:
+# requests-ntlm>=1.2
