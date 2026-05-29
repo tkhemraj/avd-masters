@@ -1,0 +1,64 @@
+{{/* AVD Masters Suite — Alertmanager MS Teams templates */}}
+
+{{/* ── Helpers ─────────────────────────────────────────────────────────── */}}
+
+{{/* Severity icon prefix */}}
+{{ define "avd_masters.icon" -}}
+  {{- if eq .CommonLabels.severity "critical" }}🔴{{ else if eq .CommonLabels.severity "warning" }}⚠️{{ else }}ℹ️{{ end -}}
+{{ end }}
+
+{{/* Hex colour for the Teams card accent bar */}}
+{{ define "avd_masters.color" -}}
+  {{- if eq .CommonLabels.severity "critical" }}FF0000{{ else if eq .CommonLabels.severity "warning" }}FFA500{{ else if eq .Status "resolved" }}00CC44{{ else }}808080{{ end -}}
+{{ end }}
+
+{{/* Platform display name */}}
+{{ define "avd_masters.platform" -}}
+  {{- if eq .CommonLabels.platform "avd" }}Azure Virtual Desktop{{ else if eq .CommonLabels.platform "rds" }}Terminal Services (RDS){{ else if eq .CommonLabels.platform "citrix" }}Citrix VDI{{ else }}{{ .CommonLabels.platform }}{{ end -}}
+{{ end }}
+
+{{/* ── Card title ────────────────────────────────────────────────────────── */}}
+{{ define "avd_masters.title" -}}
+  {{- template "avd_masters.icon" . }}
+  {{- if eq .Status "resolved" }} RESOLVED — {{ else }} {{ .CommonLabels.severity | toUpper }} — {{ end -}}
+  {{- template "avd_masters.platform" . }}
+  {{- if .CommonLabels.alertname }} · {{ .CommonLabels.alertname }}{{ end -}}
+{{ end }}
+
+{{/* ── Card body (Markdown, rendered by Teams) ─────────────────────────── */}}
+{{ define "avd_masters.text" -}}
+{{- if eq .Status "resolved" -}}
+✅ **All alerts in this group have resolved.**
+
+{{ else -}}
+**{{ .Alerts.Firing | len }} alert(s) firing**
+{{ range .Alerts.Firing }}
+---
+**{{ .Labels.alertname }}**
+{{ if .Annotations.summary }}> {{ .Annotations.summary }}{{ end }}
+
+{{ if .Annotations.description }}{{ .Annotations.description }}{{ end }}
+
+| Field | Value |
+|---|---|
+| Severity | {{ .Labels.severity | title }} |
+| Platform | {{ .Labels.platform | upper }} |
+{{ range $k, $v := .Labels -}}
+  {{- if and (ne $k "alertname") (ne $k "severity") (ne $k "platform") (ne $k "__name__") -}}
+| {{ $k | title }} | `{{ $v }}` |
+  {{ end -}}
+{{ end -}}
+| Started | {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }} |
+
+{{ end -}}
+{{ end -}}
+{{- if .Alerts.Resolved }}
+**{{ .Alerts.Resolved | len }} alert(s) resolved in this group.**
+{{ end -}}
+{{ end }}
+
+{{/* ── Summary line (used as Teams notification toast) ─────────────────── */}}
+{{ define "avd_masters.summary" -}}
+  {{- template "avd_masters.icon" . }} [{{ .Status | toUpper }}] {{ template "avd_masters.platform" . }}: {{ .CommonLabels.alertname }}
+  {{- if gt (len .Alerts.Firing) 1 }} (+{{ sub (len .Alerts.Firing) 1 }} more){{ end -}}
+{{ end }}

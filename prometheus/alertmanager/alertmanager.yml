@@ -1,0 +1,191 @@
+# AVD Masters Suite — Alertmanager Configuration
+#
+# Requires Alertmanager 0.27+ for native msteams_configs support.
+# For older versions see the prometheus-msteams section at the bottom.
+#
+# Teams webhook URLs: create an Incoming Webhook connector in each
+# target Teams channel (or use Power Automate Workflow webhooks).
+# Store the actual URLs in environment variables — do NOT commit them.
+#
+# Environment variables referenced below:
+#   TEAMS_WEBHOOK_CRITICAL   — channel for critical alerts
+#   TEAMS_WEBHOOK_WARNING    — channel for warnings
+#   TEAMS_WEBHOOK_META       — channel for infra/meta alerts (optional)
+
+global:
+  resolve_timeout: 5m
+
+  # HTTP client defaults applied to all webhook calls
+  http_config:
+    tls_config:
+      insecure_skip_verify: false   # always verify TLS for webhook endpoints
+
+templates:
+  - /etc/alertmanager/templates/avd_masters.tmpl
+
+# ── Routing tree ────────────────────────────────────────────────────────────
+#
+# Priority order (first match wins):
+#   1. Inhibited/dead-letter routes
+#   2. Meta/infrastructure alerts  →  teams-meta
+#   3. Critical severity           →  teams-critical  (fast, 10s group_wait)
+#   4. Warning severity            →  teams-warning   (batched, 2m group_wait)
+#   5. Catch-all                   →  teams-warning
+
+route:
+  receiver: teams-warning        # catch-all
+  group_by: [alertname, platform, severity]
+  group_wait:      2m
+  group_interval:  5m
+  repeat_interval: 4h
+
+  routes:
+
+    # ── Meta / infrastructure alerts ────────────────────────────────────────
+    - matchers:
+        - alertname =~ "AVDMastersData.*|AVDMastersHighErrorRate"
+      receiver: teams-meta
+      group_wait:      5m
+      group_interval:  10m
+      repeat_interval: 1h
+      continue: false
+
+    # ── Critical alerts (all platforms) ─────────────────────────────────────
+    - matchers:
+        - severity = critical
+      receiver: teams-critical
+      group_wait:      10s
+      group_interval:  5m
+      repeat_interval: 1h
+      continue: false
+
+    # ── Warning alerts ───────────────────────────────────────────────────────
+    - matchers:
+        - severity = warning
+      receiver: teams-warning
+      group_wait:      2m
+      group_interval:  10m
+      repeat_interval: 4h
+      continue: false
+
+# ── Inhibition rules ────────────────────────────────────────────────────────
+#
+# Suppress child alerts when a parent condition explains them, to reduce
+# Teams noise during platform-wide outages.
+
+inhibit_rules:
+
+  # Stale data → inhibit ALL other alerts for that platform.
+  # If we can't collect data, every per-host status is unreliable.
+  - source_matchers:
+      - alertname = "AVDMastersDataStaleCritical"
+    target_matchers:
+      - platform =~ ".+"
+    equal: [platform]
+    source_match_all: false
+
+  # No available hosts in a pool → inhibit individual session host alerts.
+  - source_matchers:
+      - alertname = "AVDHostPoolNoAvailableHosts"
+    target_matchers:
+      - alertname =~ "AVDSessionHost.*"
+    equal: [host_pool]
+
+  # Delivery group major outage → inhibit individual unregistered-VDA warnings.
+  - source_matchers:
+      - alertname = "CitrixDeliveryGroupMajorOutage"
+    target_matchers:
+      - alertname =~ "CitrixUnregisteredVDA.*"
+    equal: [site, delivery_group]
+
+  # Critical resource alert → inhibit the corresponding warning for same resource.
+  - source_matchers:
+      - alertname = "AVDSessionHostHighCPU"
+    target_matchers:
+      - alertname = "AVDSessionHostHighCPUWarning"
+    equal: [host_pool, host]
+
+  - source_matchers:
+      - alertname = "AVDSessionHostHighMemory"
+    target_matchers:
+      - alertname = "AVDSessionHostHighMemoryWarning"
+    equal: [host_pool, host]
+
+  - source_matchers:
+      - alertname = "RDSSessionHostHighCPU"
+    target_matchers:
+      - alertname = "RDSSessionHostHighCPUWarning"
+    equal: [farm, host]
+
+  - source_matchers:
+      - alertname = "RDSSessionHostHighMemory"
+    target_matchers:
+      - alertname = "RDSSessionHostHighMemoryWarning"
+    equal: [farm, host]
+
+  - source_matchers:
+      - alertname = "RDSSessionHostDiskCritical"
+    target_matchers:
+      - alertname = "RDSSessionHostDiskWarning"
+    equal: [farm, host]
+
+  - source_matchers:
+      - alertname = "RDSLicenseCritical"
+    target_matchers:
+      - alertname = "RDSLicenseWarning"
+    equal: [farm, server]
+
+# ── Receivers ───────────────────────────────────────────────────────────────
+
+receivers:
+
+  # Critical — immediate, dedicated channel, concise cards
+  - name: teams-critical
+    msteams_configs:
+      - webhook_url: "${ TEAMS_WEBHOOK_CRITICAL }"
+        title:   '{{ template "avd_masters.title" . }}'
+        text:    '{{ template "avd_masters.text"  . }}'
+        summary: '{{ template "avd_masters.summary" . }}'
+        http_config:
+          tls_config:
+            insecure_skip_verify: false
+
+  # Warning — batched, may share channel with critical or use a separate one
+  - name: teams-warning
+    msteams_configs:
+      - webhook_url: "${ TEAMS_WEBHOOK_WARNING }"
+        title:   '{{ template "avd_masters.title" . }}'
+        text:    '{{ template "avd_masters.text"  . }}'
+        summary: '{{ template "avd_masters.summary" . }}'
+        http_config:
+          tls_config:
+            insecure_skip_verify: false
+
+  # Meta/infra — stale data, collection errors; route to an ops channel
+  - name: teams-meta
+    msteams_configs:
+      - webhook_url: "${ TEAMS_WEBHOOK_META }"
+        title:   '{{ template "avd_masters.title" . }}'
+        text:    '{{ template "avd_masters.text"  . }}'
+        summary: '{{ template "avd_masters.summary" . }}'
+        http_config:
+          tls_config:
+            insecure_skip_verify: false
+
+# ── Notes: prometheus-msteams proxy (Alertmanager < 0.27) ──────────────────
+#
+# If your Alertmanager version does not support msteams_configs, run the
+# prometheus-msteams proxy and use a webhook_configs receiver instead:
+#
+#   receivers:
+#     - name: teams-critical
+#       webhook_configs:
+#         - url: 'http://prometheus-msteams:2000/alertmanager'
+#           http_config: {}
+#
+# prometheus-msteams maps Prometheus webhook payload → Teams MessageCard.
+# Docker image: quay.io/prometheusmsteams/prometheus-msteams
+# Repo: https://github.com/prometheus-msteams/prometheus-msteams
+#
+# Environment variable for the proxy:
+#   TEAMS_INCOMING_WEBHOOK_URL = <your teams webhook URL>
