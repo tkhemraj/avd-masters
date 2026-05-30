@@ -1,4 +1,4 @@
-"""Prometheus exporter for AVD Masters Suite.
+"""Prometheus exporter for VirtualDesktopMasters.
 
 Exposes /metrics on a configurable port for Prometheus scraping.
 

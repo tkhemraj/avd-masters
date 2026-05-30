@@ -1,4 +1,4 @@
-# AVD Masters Suite — Alertmanager Configuration
+# VirtualDesktopMasters — Alertmanager Configuration
 #
 # Requires Alertmanager 0.27+ for native msteams_configs support.
 # For older versions see the prometheus-msteams section at the bottom.

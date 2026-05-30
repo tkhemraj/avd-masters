@@ -1,5 +1,5 @@
 ---
-# AVD Masters Suite — Prometheus Alerting Rules
+# VirtualDesktopMasters — Prometheus Alerting Rules
 #
 # Status gauge encoding (used across all platforms):
 #   0 = OK  |  1 = WARNING  |  2 = CRITICAL  |  3 = UNKNOWN  |  4 = OFFLINE
@@ -387,7 +387,7 @@ groups:
           severity: warning
           platform: "{{ $labels.platform }}"
         annotations:
-          summary: "AVD Masters data stale for platform: {{ $labels.platform }}"
+          summary: "VirtualDesktopMasters data stale for platform: {{ $labels.platform }}"
           description: >
             No successful collection has been recorded for the
             {{ $labels.platform }} platform in the last 5 minutes.
@@ -401,7 +401,7 @@ groups:
           severity: critical
           platform: "{{ $labels.platform }}"
         annotations:
-          summary: "AVD Masters data critically stale: {{ $labels.platform }}"
+          summary: "VirtualDesktopMasters data critically stale: {{ $labels.platform }}"
           description: >
             No successful collection for the {{ $labels.platform }} platform
             in more than 10 minutes. Dashboard data is unreliable.
@@ -414,7 +414,7 @@ groups:
           severity: warning
           platform: "{{ $labels.platform }}"
         annotations:
-          summary: "AVD Masters collection errors: {{ $labels.platform }} ({{ $value | printf \"%.0f\" }} in 15m)"
+          summary: "VirtualDesktopMasters collection errors: {{ $labels.platform }} ({{ $value | printf \"%.0f\" }} in 15m)"
           description: >
             The {{ $labels.platform }} collector has encountered
             {{ $value | printf "%.0f" }} errors in the last 15 minutes.

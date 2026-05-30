@@ -199,7 +199,7 @@ def render_full_report(findings: list[Finding],
     platforms = sorted({f.platform for f in findings})
 
     parts = [
-        Rule("[bold white]AVD Masters — Best Practice Analysis[/bold white]",
+        Rule("[bold white]VirtualDesktopMasters — Best Practice Analysis[/bold white]",
              style="bright_blue"),
         Padding(render_summary_table(scores), (1, 0)),
     ]

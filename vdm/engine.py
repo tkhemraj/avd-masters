@@ -28,6 +28,8 @@ _DEFAULT_THRESHOLDS = {
     "rds_host_cpu_crit": 90.0,
     "rds_host_mem_warn": 85.0,
     "rds_host_mem_crit": 95.0,
+    "rds_host_disk_warn": 80.0,
+    "rds_host_disk_crit": 95.0,
     "rds_license_warn": 80.0,
     "rds_license_crit": 95.0,
     "citrix_unregistered_warn": 1,    # any unregistered VDA = warning
@@ -230,7 +232,7 @@ class MonitoringEngine:
                 for val, warn_t, crit_t, label in (
                     (cpu, self.thresholds["rds_host_cpu_warn"], self.thresholds["rds_host_cpu_crit"], "CPU"),
                     (mem, self.thresholds["rds_host_mem_warn"], self.thresholds["rds_host_mem_crit"], "Mem"),
-                    (disk, 80.0, 95.0, "Disk"),
+                    (disk, self.thresholds["rds_host_disk_warn"], self.thresholds["rds_host_disk_crit"], "Disk"),
                 ):
                     if val is None:
                         continue

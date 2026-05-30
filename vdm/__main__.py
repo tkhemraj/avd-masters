@@ -19,7 +19,7 @@ def _setup_logging(level: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="vdm",
-        description="AVD Masters Suite — unified monitoring for AVD, RDS, and Citrix VDI",
+        description="VirtualDesktopMasters — unified monitoring for AVD, RDS, and Citrix VDI",
     )
     parser.add_argument(
         "--config", default="config.yaml",

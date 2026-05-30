@@ -1,4 +1,4 @@
-"""Rich-powered live terminal dashboard for AVD Masters Suite."""
+"""Rich-powered live terminal dashboard for VirtualDesktopMasters."""
 
 from __future__ import annotations
 
@@ -287,7 +287,7 @@ def render_header(snap: MasterSnapshot) -> Panel:
     ctx_badge = _status_badge(snap.citrix.overall_status) if snap.citrix else Text("—", style="dim")
 
     title_text = Text.assemble(
-        Text("AVD MASTERS SUITE", style="bold white"),
+        Text("VirtualDesktopMasters", style="bold white"),
         Text("  "),
         badge,
         Text(f"  [{now_str}]", style="dim"),
@@ -356,7 +356,7 @@ def run_live_dashboard(get_snapshot, refresh_seconds: int = 30) -> None:
     import time
 
     console = Console()
-    console.print("[bold cyan]AVD Masters Suite — starting...[/bold cyan]")
+    console.print("[bold cyan]VirtualDesktopMasters — starting...[/bold cyan]")
 
     snap = get_snapshot()
 

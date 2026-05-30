@@ -1,4 +1,4 @@
-# AVD Masters Suite — Example Configuration
+# VirtualDesktopMasters — Example Configuration
 # Copy to config.yaml and fill in your values.
 #
 # SECURITY: config.yaml contains credentials — protect it:
@@ -27,6 +27,8 @@ thresholds:
   rds_host_cpu_crit: 90.0
   rds_host_mem_warn: 85.0
   rds_host_mem_crit: 95.0
+  rds_host_disk_warn: 80.0
+  rds_host_disk_crit: 95.0
   rds_license_warn: 80.0     # % CAL utilization
   rds_license_crit: 95.0
   citrix_unregistered_warn: 1  # unregistered VDAs per delivery group
@@ -34,7 +36,7 @@ thresholds:
 
 # ── Prometheus exporter (optional) ────────────────────────────────────────
 # Exposes /metrics for Prometheus scraping.
-# Run with: python -m avd_masters --exporter-only
+# Run with: python -m vdm --exporter-only
 # Or alongside the TUI/headless mode by just adding this block.
 #
 # prometheus:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the AVD Masters Grafana dashboard JSON.
+"""Generate the VirtualDesktopMasters Grafana dashboard JSON.
 
 Run: python grafana/dashboard_gen.py > grafana/vdm_dashboard.json
 """

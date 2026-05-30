@@ -171,7 +171,7 @@ class AVDCollector(BaseCollector):
                         status=host_status,
                         allow_new_sessions=host.allow_new_session or False,
                         sessions=host.sessions or 0,
-                        max_sessions=host.status_timestamp is not None and 0 or 0,
+                        max_sessions=host.max_session_limit or 0,
                         agent_version=host.agent_version,
                         os_version=host.os_version,
                         last_heartbeat=host.last_heart_beat,
