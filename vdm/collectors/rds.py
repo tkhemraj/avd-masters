@@ -203,7 +203,8 @@ class RDSCollector(BaseCollector):
             session = self._make_session(broker)
             ps = (
                 "Get-RDUserSession -ConnectionBroker localhost | "
-                "Select-Object UserName,HostServer,SessionState,IdleTime,LogonTime | "
+                "Select-Object UserName,HostServer,SessionState,LogonTime,"
+                "@{N='IdleMinutes';E={[int]$_.IdleTime.TotalMinutes}} | "
                 "ConvertTo-Json -Compress"
             )
             stdout, stderr, rc = _winrm_run(session, ps)
@@ -229,7 +230,7 @@ class RDSCollector(BaseCollector):
                         username=s.get("UserName") or "unknown",
                         state=state,
                         host=s.get("HostServer"),
-                        idle_minutes=s.get("IdleTime"),
+                        idle_minutes=s.get("IdleMinutes"),
                     )
                 )
         except Exception as exc:

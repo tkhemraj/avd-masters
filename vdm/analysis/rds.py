@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..models.metrics import HealthStatus, RDSSnapshot, SessionState
 from .base import Category, Finding, Severity
+from .common import os_eol, summarize_names
 
 _DEFAULTS = {
     "min_session_hosts":       2,      # HA: at least 2 RDSH servers
@@ -22,6 +23,8 @@ _DEFAULTS = {
     "max_uptime_days":        30.0,    # flag hosts up > 30 days (patch hygiene)
     "disconnected_ratio_warn": 0.30,   # warn if >30% of sessions are disconnected
     "capacity_headroom_pct":  20.0,    # total farm should have ≥20% spare capacity
+    "idle_disconnect_minutes": 240,    # flag disconnected sessions idle longer than this
+    "idle_session_warn_count": 5,      # ...once this many are stale
 }
 
 
@@ -34,9 +37,12 @@ def analyse(snap: RDSSnapshot, cfg: Optional[dict] = None) -> list[Finding]:
     _licensing(snap, t, findings)
     _farm_capacity(snap, t, findings)
     _disconnected_session_ratio(snap, t, findings)
+    _stale_idle_sessions(snap, t, findings)
     for host in snap.session_hosts:
         _host_resources(snap.farm_name, host, t, findings)
         _host_uptime(snap.farm_name, host, t, findings)
+        _host_os_currency(host, findings)
+        _host_oversubscribed(host, findings)
 
     return findings
 
@@ -336,3 +342,80 @@ def _host_uptime(farm_name, host, t, findings):
                 "Consider automating monthly maintenance reboots via Task Scheduler or SCCM."
             ),
         ))
+
+
+def _host_os_currency(host, findings):
+    eol = os_eol(host.os_version)
+    if not eol:
+        return
+    name, eol_date = eol
+    findings.append(Finding(
+        platform="RDS", resource=host.hostname,
+        severity=Severity.CRITICAL,
+        category=Category.SECURITY,
+        title="Session host on out-of-support OS",
+        detail=(
+            f"{host.hostname} is running {name} (reported: '{host.os_version}'), "
+            f"which left Microsoft support on {eol_date}. "
+            "It receives no security patches and is a direct attack surface for "
+            "every user that logs on to it."
+        ),
+        recommendation=(
+            "Migrate these workloads to a supported Windows Server release "
+            "(2019/2022/2025). If migration is blocked, an ESU subscription is the "
+            "only supported stopgap — but plan the rebuild."
+        ),
+    ))
+
+
+def _host_oversubscribed(host, findings):
+    """Active sessions above the configured per-host limit = brokering past capacity."""
+    if host.max_sessions <= 0 or host.active_sessions <= host.max_sessions:
+        return
+    findings.append(Finding(
+        platform="RDS", resource=host.hostname,
+        severity=Severity.WARNING,
+        category=Category.CAPACITY,
+        title="Session host is oversubscribed",
+        detail=(
+            f"{host.hostname} has {host.active_sessions} active sessions against a "
+            f"max of {host.max_sessions}. The broker has placed more users than the "
+            "host is sized for, usually because peers are down or draining."
+        ),
+        recommendation=(
+            "Restore drained/offline peers so the broker can rebalance, or raise the "
+            "limit only if the host genuinely has CPU/RAM headroom. Sustained "
+            "oversubscription degrades every session on the host."
+        ),
+    ))
+
+
+def _stale_idle_sessions(snap, t, findings):
+    """Disconnected sessions sitting idle for hours pin CALs, RAM and profile locks."""
+    threshold = t["idle_disconnect_minutes"]
+    stale = [
+        s for s in snap.user_sessions
+        if s.state in (SessionState.DISCONNECTED, SessionState.IDLE)
+        and s.idle_minutes is not None
+        and s.idle_minutes >= threshold
+    ]
+    if len(stale) < t["idle_session_warn_count"]:
+        return
+    worst = max(stale, key=lambda s: s.idle_minutes or 0)
+    findings.append(Finding(
+        platform="RDS", resource=snap.farm_name,
+        severity=Severity.WARNING,
+        category=Category.HYGIENE,
+        title="Stale disconnected sessions consuming resources",
+        detail=(
+            f"{len(stale)} session(s) have been idle/disconnected for ≥"
+            f"{threshold // 60}h (longest: {worst.username} on {worst.host or 'unknown'} "
+            f"at {(worst.idle_minutes or 0) / 60:.1f}h). "
+            "Each holds a CAL, a roaming profile lock and server memory."
+        ),
+        recommendation=(
+            "Enforce 'End session when time limits are reached' with a disconnected "
+            "session limit (GPO: RDS > Session Time Limits). Reset stragglers now with "
+            "`Get-RDUserSession | ? SessionState -eq Disconnected | Invoke-RDUserLogoff`."
+        ),
+    ))

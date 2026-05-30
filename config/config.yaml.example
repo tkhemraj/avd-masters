@@ -32,6 +32,35 @@ thresholds:
   citrix_unregistered_warn: 1  # unregistered VDAs per delivery group
   citrix_unregistered_crit: 3
 
+# ── Best-practice analysis (optional) ─────────────────────────────────────
+# Tunes the `python -m vdm --analyze` health report. Every key shown is the
+# built-in default — uncomment only what you want to override. Each platform
+# block is passed straight to its analyser, so any threshold defined in
+# vdm/analysis/<platform>.py _DEFAULTS can be set here.
+#
+# analysis:
+#   avd:
+#     min_hosts_per_pool:        2     # HA floor per host pool
+#     disk_warn_pct:            80.0   # session-host C:/FSLogix disk pressure
+#     disk_crit_pct:            90.0
+#     heartbeat_stale_minutes:  15     # flag hosts whose agent has gone silent
+#     max_os_builds_per_pool:    1     # >1 distinct OS build = image drift
+#     disconnected_ratio_warn:  0.30   # disconnected/total session ratio
+#   rds:
+#     min_brokers:               2     # Connection Broker HA floor
+#     max_uptime_days:          30.0   # patch-hygiene reboot reminder
+#     idle_disconnect_minutes:  240    # disconnected sessions idle this long...
+#     idle_session_warn_count:   5     # ...and at least this many → warn
+#   citrix:
+#     min_controllers:           2     # Delivery Controller HA floor
+#     session_per_vda_warn:      8     # avg active sessions per registered VDA
+#     session_per_vda_crit:     12
+#     disconnected_ratio_warn:  0.30
+#   gpu:
+#     fb_saturated_pct:         88.0   # vGPU framebuffer too small (undersized)
+#     fb_underused_pct:         20.0   # vGPU framebuffer oversized (wasted licence)
+#     sm_q_profile_min_pct:     15.0   # Q-profile users below this → B would do
+
 # ── Prometheus exporter (optional) ────────────────────────────────────────
 # Exposes /metrics for Prometheus scraping.
 # Run with: python -m avd_masters --exporter-only

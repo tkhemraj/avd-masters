@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..models.metrics import CitrixSnapshot, HealthStatus
 from .base import Category, Finding, Severity
+from .common import latest_version, os_eol, summarize_names
 
 _DEFAULTS = {
     "min_controllers":             2,     # HA: at least 2 Delivery Controllers
@@ -17,7 +18,11 @@ _DEFAULTS = {
     "maintenance_mode_warn":      True,   # warn on delivery groups left in maintenance
     "session_per_vda_warn":       8,      # warn if avg sessions per registered VDA exceeds this
     "session_per_vda_crit":       12,     # critical threshold for sessions per VDA
+    "disconnected_ratio_warn":    0.30,   # warn if >30% of a DG's sessions are disconnected
 }
+
+# Citrix FaultState values that mean a VDA is actively broken (anything but these).
+_HEALTHY_FAULT_STATES = {None, "", "None"}
 
 
 def analyse(snap: CitrixSnapshot, cfg: Optional[dict] = None) -> list[Finding]:
@@ -25,12 +30,18 @@ def analyse(snap: CitrixSnapshot, cfg: Optional[dict] = None) -> list[Finding]:
     findings: list[Finding] = []
 
     _controller_redundancy(snap, t, findings)
+    _controller_currency(snap, findings)
     for dg in snap.delivery_groups:
         _dg_availability(snap.site_name, dg, t, findings)
         _dg_capacity(snap.site_name, dg, t, findings)
         _dg_vda_currency(snap.site_name, dg, t, findings)
         _dg_maintenance(snap.site_name, dg, t, findings)
         _dg_session_density(snap.site_name, dg, t, findings)
+        _dg_disconnected_sessions(snap.site_name, dg, t, findings)
+        _vda_fault_states(dg, findings)
+        _vda_power_waste(dg, findings)
+        _vda_stuck_maintenance(dg, findings)
+        _vda_os_currency(dg, findings)
 
     return findings
 
@@ -301,4 +312,161 @@ def _dg_session_density(site, dg, t, findings):
             title="Session density within recommended range",
             detail=f"'{dg.name}': {avg:.1f} sessions/VDA (threshold: {warn}).",
             recommendation="",
+        ))
+
+
+def _controller_currency(snap, findings):
+    """Mixed DDC versions mean a site upgrade stalled — a known cause of flaky
+    VDA registration and Studio/Director errors."""
+    versions = Counter(c.version for c in snap.controllers if c.version)
+    if len(versions) <= 1:
+        return
+    newest = latest_version(versions)
+    behind = [c.name for c in snap.controllers if c.version and c.version != newest]
+    findings.append(Finding(
+        platform="Citrix", resource=snap.site_name,
+        severity=Severity.WARNING,
+        category=Category.CURRENCY,
+        title="Delivery Controllers on mixed versions",
+        detail=(
+            f"Site '{snap.site_name}' runs {len(versions)} controller versions: "
+            + ", ".join(f"{v} ({c}x)" for v, c in versions.most_common())
+            + f". Behind newest ({newest}): " + summarize_names(behind)
+        ),
+        recommendation=(
+            "Finish the site upgrade so all Delivery Controllers run the same build. "
+            "Running controllers at different versions for longer than a maintenance "
+            "window is unsupported and can corrupt the site database schema state."
+        ),
+    ))
+
+
+def _vda_fault_states(dg, findings):
+    """Per-VDA FaultState — the single most useful Director signal for 'why won't
+    this machine take sessions'."""
+    faulted = [m for m in dg.machines if m.fault_state not in _HEALTHY_FAULT_STATES]
+    if not faulted:
+        return
+    by_fault = Counter(m.fault_state for m in faulted)
+    findings.append(Finding(
+        platform="Citrix", resource=dg.name,
+        severity=Severity.CRITICAL,
+        category=Category.AVAILABILITY,
+        title="VDAs reporting fault states",
+        detail=(
+            f"{len(faulted)} VDA(s) in '{dg.name}' have a fault state: "
+            + ", ".join(f"{state} ({n}x)" for state, n in by_fault.most_common())
+            + ". Affected: " + summarize_names(m.name for m in faulted)
+        ),
+        recommendation=(
+            "Triage by fault: 'FailedToStart' → hypervisor/power-action failure, check "
+            "the host connection; 'StuckOnBoot' → image or driver problem; "
+            "'Unregistered' → broker/DNS/time-skew. Drill into each in Director "
+            "(Filters > Machines) and check the VDA's Citrix Broker Agent event log."
+        ),
+    ))
+
+
+def _vda_power_waste(dg, findings):
+    """VDAs powered on but not serving = burning compute/cloud spend for nothing."""
+    if not dg.machines:
+        return
+    wasted = [
+        m for m in dg.machines
+        if m.power_state == "On"
+        and m.registration_state != "Registered"
+        and m.sessions == 0
+    ]
+    if not wasted:
+        return
+    findings.append(Finding(
+        platform="Citrix", resource=dg.name,
+        severity=Severity.WARNING,
+        category=Category.CAPACITY,
+        title="Powered-on VDAs serving no sessions",
+        detail=(
+            f"{len(wasted)} VDA(s) in '{dg.name}' are powered ON but unregistered "
+            "with zero sessions — consuming host/cloud compute while brokering nothing: "
+            + summarize_names(m.name for m in wasted)
+        ),
+        recommendation=(
+            "Fix registration (see fault state) so the capacity is usable, or power "
+            "them down. On cloud hosting connections this is direct wasted spend; let "
+            "Autoscale manage power state once registration is healthy."
+        ),
+    ))
+
+
+def _vda_stuck_maintenance(dg, findings):
+    """Individual machines left in maintenance mode silently remove capacity."""
+    stuck = [m for m in dg.machines if m.maintenance_mode]
+    # If the whole DG is in maintenance, _dg_maintenance already reported it.
+    if not stuck or dg.in_maintenance:
+        return
+    findings.append(Finding(
+        platform="Citrix", resource=dg.name,
+        severity=Severity.WARNING,
+        category=Category.HYGIENE,
+        title="Individual VDAs left in maintenance mode",
+        detail=(
+            f"{len(stuck)} VDA(s) in '{dg.name}' are in maintenance mode while the "
+            "delivery group is live. They silently remove capacity and are a common "
+            "cause of 'we're short on machines but Autoscale isn't adding any': "
+            + summarize_names(m.name for m in stuck)
+        ),
+        recommendation=(
+            "If maintenance is finished, clear it: "
+            "Set-BrokerMachine -MachineName <dom\\\\name> -InMaintenanceMode $false. "
+            "Audit periodically — maintenance flags set during patching are routinely forgotten."
+        ),
+    ))
+
+
+def _vda_os_currency(dg, findings):
+    eol_machines: dict[str, list[str]] = {}
+    for m in dg.machines:
+        eol = os_eol(m.os_type)
+        if eol:
+            eol_machines.setdefault(f"{eol[0]} (EOL {eol[1]})", []).append(m.name)
+    if not eol_machines:
+        return
+    for label, names in eol_machines.items():
+        findings.append(Finding(
+            platform="Citrix", resource=dg.name,
+            severity=Severity.CRITICAL,
+            category=Category.SECURITY,
+            title="VDAs on out-of-support OS",
+            detail=(
+                f"{len(names)} VDA(s) in '{dg.name}' run {label}, receiving no "
+                "security updates: " + summarize_names(names)
+            ),
+            recommendation=(
+                "Rebuild the machine catalog on a supported OS and roll it out via "
+                "MCS/PVS. Out-of-support VDAs are also unsupported by Citrix for the "
+                "current VDA agent."
+            ),
+        ))
+
+
+def _dg_disconnected_sessions(site, dg, t, findings):
+    total = dg.sessions_active + dg.sessions_disconnected
+    if total == 0:
+        return
+    ratio = dg.sessions_disconnected / total
+    if ratio >= t["disconnected_ratio_warn"]:
+        findings.append(Finding(
+            platform="Citrix", resource=dg.name,
+            severity=Severity.WARNING,
+            category=Category.HYGIENE,
+            title="High proportion of disconnected sessions",
+            detail=(
+                f"{dg.sessions_disconnected} of {total} sessions ({ratio * 100:.0f}%) "
+                f"in '{dg.name}' are disconnected. They pin VDAs online (blocking "
+                "Autoscale drain) and hold user profile mounts open."
+            ),
+            recommendation=(
+                "Set disconnected-session limits in the Citrix policy "
+                "('Session disconnect timer' / 'Disconnected session timer interval') "
+                "so idle sessions log off and machines can drain for scale-in."
+            ),
         ))
