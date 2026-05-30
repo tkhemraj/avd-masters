@@ -14,6 +14,8 @@ This is one of the highest-value features for large Microsoft customers.
 from __future__ import annotations
 
 import logging
+import re
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
@@ -48,10 +50,30 @@ DEFAULT_PRICING = PAYGO
 
 AZURE_PRICES_API = "https://prices.azure.com/api/retail/prices"
 
-# Simple in-memory cache (in real usage this would be smarter)
+# Simple in-memory cache
 _price_cache: dict[str, float] = {}
 _cache_ttl = timedelta(hours=6)
 _cache_time: Optional[datetime] = None
+_cache_lock = threading.Lock()
+
+# Azure region names are lowercase alphanumeric with no spaces
+_REGION_RE = re.compile(r"^[a-z][a-z0-9]{1,29}$")
+# Azure VM SKU names: letters, digits, underscores only
+_SKU_RE = re.compile(r"^[A-Za-z0-9_]{1,64}$")
+
+
+def _validate_region(region: str) -> str:
+    """Raise ValueError if region contains characters that could inject OData syntax."""
+    if not _REGION_RE.match(region):
+        raise ValueError(f"Invalid Azure region name: {region!r}")
+    return region
+
+
+def _validate_sku(sku: str) -> str:
+    """Raise ValueError if SKU contains characters that could inject OData syntax."""
+    if not _SKU_RE.match(sku):
+        raise ValueError(f"Invalid Azure SKU name: {sku!r}")
+    return sku
 
 
 def get_gpu_hourly_price(sku: str, region: str = "eastus") -> Optional[float]:
@@ -60,46 +82,55 @@ def get_gpu_hourly_price(sku: str, region: str = "eastus") -> Optional[float]:
 
     This is best-effort. Real enterprises often have negotiated rates.
     """
-    global _cache_time
+    try:
+        region = _validate_region(region)
+        sku_validated = _validate_sku(sku)
+    except ValueError as exc:
+        logger.warning("Invalid parameter for price lookup: %s", exc)
+        return None
 
-    cache_key = f"{sku.lower()}:{region}"
+    cache_key = f"{sku_validated.lower()}:{region}"
 
-    # Use cache if fresh
-    if _cache_time and datetime.utcnow() - _cache_time < _cache_ttl:
-        if cache_key in _price_cache:
-            return _price_cache[cache_key]
+    with _cache_lock:
+        if _cache_time and datetime.utcnow() - _cache_time < _cache_ttl:
+            if cache_key in _price_cache:
+                return _price_cache[cache_key]
 
     try:
-        # The Azure Retail Prices API uses 'serviceName' and 'productName' filters.
-        # This is a simplified query focused on Virtual Machines.
+        sku_suffix = sku_validated.split("_")[-1]
         params = {
             "api-version": "2023-01-01-preview",
-            "$filter": f"serviceName eq 'Virtual Machines' and armRegionName eq '{region}' and contains(skuName, '{sku.split('_')[-1]}')",
+            "$filter": (
+                f"serviceName eq 'Virtual Machines' "
+                f"and armRegionName eq '{region}' "
+                f"and contains(skuName, '{sku_suffix}')"
+            ),
         }
 
-        resp = requests.get(AZURE_PRICES_API, params=params, timeout=8)
+        resp = requests.get(AZURE_PRICES_API, params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 
-        # Find the best matching item (very heuristic)
         for item in data.get("Items", []):
             if "GPU" in item.get("productName", "") or "H100" in item.get("skuName", "") or "A10" in item.get("skuName", ""):
                 price = float(item.get("retailPrice", 0))
                 if price > 0:
-                    _price_cache[cache_key] = price
-                    _cache_time = datetime.utcnow()
+                    with _cache_lock:
+                        _price_cache[cache_key] = price
+                        # module-level _cache_time update — safe under lock
+                        globals()["_cache_time"] = datetime.utcnow()
                     return price
 
-        # Fallback: just take the first result if any
         if data.get("Items"):
             price = float(data["Items"][0].get("retailPrice", 0))
             if price > 0:
-                _price_cache[cache_key] = price
-                _cache_time = datetime.utcnow()
+                with _cache_lock:
+                    _price_cache[cache_key] = price
+                    globals()["_cache_time"] = datetime.utcnow()
                 return price
 
     except Exception as exc:
-        logger.warning("Failed to fetch Azure price for %s: %s", sku, exc)
+        logger.warning("Failed to fetch Azure price for %s/%s: %s", sku, region, type(exc).__name__)
 
     return None
 

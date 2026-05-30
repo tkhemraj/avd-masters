@@ -12,6 +12,7 @@ cost calculations, tagging, and recommendations are accurate.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
 from azure.mgmt.compute import ComputeManagementClient
@@ -19,6 +20,8 @@ from azure.mgmt.compute import ComputeManagementClient
 from avd_masters.catalog import GpuSpec, NVIDIA, AMD
 
 logger = logging.getLogger(__name__)
+
+_REGION_RE = re.compile(r"^[a-z][a-z0-9]{1,29}$")
 
 
 def fetch_gpu_skus_for_regions(
@@ -36,6 +39,9 @@ def fetch_gpu_skus_for_regions(
 
     for region in regions:
         try:
+            if not _REGION_RE.match(region):
+                logger.warning("Skipping region with invalid name: %r", region)
+                continue
             skus = compute_client.resource_skus.list(
                 filter=f"location eq '{region}' and resourceType eq 'virtualMachines'"
             )

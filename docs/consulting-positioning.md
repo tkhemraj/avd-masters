@@ -1,151 +1,138 @@
-# AVD Masters — Personal Positioning & Consulting Assets
+# AVD Masters — Who Built This and Why It Exists
 
-This document contains high-signal positioning and copy designed to sell *you* as the consultant, with AVD Masters as your unfair advantage.
+This is not a tool built by a product team that decided AVD needed another dashboard.
+
+It was built by someone who has been in the weeds of this stuff for over 25 years — migrations, M&A collapses, regulated environments, broken profiles, expensive hardware delivering mediocre results — and who got tired of watching the same painful problems repeat themselves in every environment they walked into.
 
 ---
 
-## Core Positioning Statement
+## My Background
 
-**Who you are:**
+I started my career at Hypercom, where I learned cryptography and the mechanics of securing credit card transactions at the infrastructure level. That foundation — understanding how systems fail when security isn't designed in — has shaped how I approach everything since.
 
-You are the person organizations call when Azure Virtual Desktop — especially GPU workloads — has become expensive, painful, or risky, and they need someone who actually knows how to make it work in the real world.
+From there I got deep into Active Directory. MCSE on Windows NT 4.0, then Windows 2000. At the time it was brand new territory, and I built real expertise in enterprise identity and directory infrastructure before most people knew they needed it.
 
-You didn’t build AVD Masters because you wanted to sell another monitoring tool. You built it because you were tired of watching the same expensive mistakes destroy user experience, inflate costs, and create compliance exposure — over and over again.
+I joined Aelita Software and stayed through the Quest Software acquisition. That's where migrations became my specialty — not small ones, but the kind that Fortune 500 companies call you for when they're consolidating after an M&A event, or collapsing multiple forests, or trying to get off a platform they've outgrown. I've been running those operations since 2004.
 
-Most people who set up and run AVD don’t do it badly on purpose. They just don’t have the depth of experience or the right tools. You bring both.
+I've worked on the infrastructure that became Microsoft 365 before it was called that. When Microsoft was building BPOS — the Business Productivity Online Suite — they were borrowing architecture that we had already built and were selling directly to Verizon. I worked for companies like VANADE that were deeply embedded in Microsoft's ecosystem at the time, building what enterprise cloud delivery would eventually look like.
 
-**What you actually solve:**
+After Quest, I went to M3 Technology Group in Charlotte — founded by three former Microsoft people — which was acquired by AZALEOS. We built what we called a virtual private cloud and sold it to Verizon Enterprise Services. Verizon's enterprise clients would lease infrastructure sitting in their own data centers rather than managing it themselves. Microsoft eventually acquired that work, and I spent time training the migration engineers who would get organizations off Exchange, Lotus Notes, GroupWise, and early Gmail migrations when nobody really had a practice for that yet.
 
-You help teams move from “AVD is kind of working but it feels fragile and expensive” to “We finally have control, clarity, and confidence in our environment.”
+One of the things I spent a lot of time on in those years was X.400 and X.500 header manipulation — writing scripts that would preserve message threading and reply integrity when you were collapsing six or seven mail systems at once. There weren't great tools for it. You either understood what was happening at the protocol level or you made a mess.
 
-You specialize in the areas that actually matter and where most environments are quietly bleeding:
-- User profile and FSLogix disasters (the #1 reason AVD feels terrible)
-- Poor or invisible user experience on expensive GPU hardware
-- Cost opacity and waste on GPU infrastructure
-- Governance and compliance gaps (especially CMMC 2.0 / regulated environments)
-- The operational complexity that makes teams feel like they’re always one incident away from chaos
+I co-founded Halcyon with Hugh Morrison in Halifax. We built professional services delivery around Active Directory and enterprise management. One of the projects I'm most proud of from that period was the work we did with PwC — helping with their South American theater during a red-green forest worldwide collapse. That kind of work doesn't leave a lot of room for guessing.
 
-**How you’re different:**
+I helped a Phoenix-area company attain Microsoft Gold status. They wanted to sell Cisco and VMware. I showed them what they could make doing what I was doing. When I left, they understood.
 
-You don’t just give advice or produce another pretty dashboard.
+I spent several years at Dimension Data — acquired by NTT — as a Business Development Manager for their Microsoft line of business. I was trying to move them toward where the real value was. It was hard when the organization's incentives were pointed at data center hardware. I left in 2019.
 
-You bring a purpose-built, Python-first toolkit (AVD Masters) that was designed specifically to surface the painful, recurring problems that generic tools and generic consultants miss. The tool turns weeks of tribal knowledge and painful discovery into clear, prioritized, defensible insight — fast.
+Since then I've been independent — working with smaller managed service providers that want to deliver world-class Microsoft services without the overhead of a large systems integrator, and building tools like this one.
 
-You combine real operator experience with a system that makes that experience scalable and repeatable.
+---
 
-You don’t sell monitoring. You sell clarity, control, and the ability to stop the same problems from happening again.
+## What I Actually Solve
+
+I'm not trying to compete with Nerdio or any of the monitoring platforms. I'm not selling dashboards.
+
+The environments I walk into have the same problems, over and over:
+
+- **Profile and FSLogix disasters.** This is the number one reason AVD feels terrible. Most organizations have no idea how broken their profile architecture is until I show them. It's not theoretical — it's corrupted containers, busted attach sequences, storage bottlenecks, and users who think VDI just "works like this."
+
+- **Expensive GPU hardware delivering mediocre performance.** Organizations are spending serious money on H100s and A100s and L40Ses and getting user experience that should embarrass the team that set it up. The hardware isn't the problem. The setup, the profile configuration, the encoding pipeline, the monitoring — that's the problem.
+
+- **Cost opacity on GPU infrastructure.** Most environments have no accurate picture of what their GPU spend is actually buying. They know the invoice. They don't know the per-workload, per-session, per-GPU utilization story. AVD Masters was built specifically to fix that.
+
+- **Governance gaps in regulated environments.** I've worked in environments where CMMC 2.0 compliance is not optional and auditors are not patient. Generic tools don't produce the kind of structured evidence those environments require. AVD Masters does.
+
+- **The operational fragility that makes teams feel like they're always one incident away from chaos.** This is cultural and technical. I help fix both.
+
+---
+
+## Why I Built AVD Masters the Way I Did
+
+I'm not a developer by trade. I'm a technologist who knows how to analyze code, has spent decades writing scripts to solve problems that the tools of the moment couldn't handle, and understands what actually matters in production.
+
+AVD Masters is me modernizing the kind of work I've been doing with PowerShell and legacy tooling for years — rebuilding it in Python so it runs against larger, more diverse estates and doesn't become a maintenance liability when Microsoft deprecates the underlying cmdlets.
+
+I used AI to build and augment it. That's not a confession — it's the point. The knowledge base is mine. The operational patterns are things I've learned over 25 years in the field. The code is the vehicle. What you get when you run AVD Masters is the output of that experience turned into something repeatable and scalable, not just something I carry around in my head.
+
+The tool is designed to run against more than one VDI infrastructure. That's deliberate. The environments I work in have increasingly heterogeneous estates — AVD alongside Citrix, alongside other VDI platforms — and the tooling needs to be able to speak across all of that without requiring a different product for each vendor.
 
 ---
 
 ## Signature Offerings
 
-### 1. AVD Experience & Profile Remediation Program
-**The “make it stop sucking” engagement.**
+### AVD Experience & Profile Remediation
 
-Most organizations have no idea how bad their profile and experience situation actually is until you show them.
+Most organizations don't know how bad their profile situation is until I show them. This is the engagement that produces visible results fast — a clear assessment of what's broken, what it's costing, and a hands-on path to fix it.
 
-This is a focused, high-impact program that:
-- Uses AVD Masters to rapidly assess profile/FSLogix health, latency/experience reality, and cost waste
-- Produces a clear, prioritized remediation roadmap
-- Includes hands-on guidance (or delivery) to fix the worst problems
-- Leaves the client with dramatically better user experience and much lower risk
+> "I don't just tell you your profiles are broken. I show you exactly how broken they are, what it's costing you, and how to fix it without making it worse."
 
-**Ideal for:** Organizations that are already live with AVD but are dealing with user complaints, profile corruption issues, or “it works but it feels bad” syndrome.
+### AVD Operational Maturity Assessment
 
-**Positioning line:**  
-“I don’t just tell you your profiles are broken. I show you exactly how broken they are, what it’s costing you, and how to fix it without making it worse.”
+A structured, tool-accelerated assessment that gives leadership an honest picture of where they actually stand — cost, experience, configuration hygiene, governance, operational risk. This is how I win the bigger work. It positions me as the person who sees the whole picture, not just one layer.
 
-### 2. AVD Operational Maturity Assessment
-**The “here’s the real state of your environment” engagement.**
+### GPU AVD Optimization & Governance
 
-A structured, tool-accelerated assessment that gives leadership a clear, honest picture of where they actually stand across cost, experience, configuration hygiene, governance, and operational risk.
+For organizations running serious GPU workloads where both cost control and defensible compliance matter. AVD Masters lets me have both conversations at the same time — "here's exactly how much you're wasting" and "here's the governance evidence you'll need when the auditor arrives."
 
-Deliverables include:
-- Quantified findings (cost, experience, risk)
-- Prioritized roadmap
-- Benchmark against modern AVD practices
-- Executive-ready report + technical deep-dive
+### Ongoing Operations Partnership
 
-This is the engagement you use to win bigger, longer-term work. It positions you as the person who sees the whole picture.
-
-### 3. GPU AVD Optimization & Governance Program
-**For organizations running serious (and expensive) GPU workloads.**
-
-Combines the financial intelligence (Midas), experience/latency visibility, and governance capabilities (including CMMC 2.0 alignment) into one program.
-
-This is the offering for defense contractors, highly regulated environments, or any organization where both cost control *and* defensible operations matter.
-
-It lets you speak two languages at once: “Here’s how much money you’re leaving on the table” and “Here’s the governance evidence you’ll need when someone asks hard questions.”
-
-### 4. Ongoing AVD Operations Partnership (Optional)
-For clients who want you as their ongoing “AVD brain.”
-
-You become the person they call when they need to make important decisions, run health checks, or avoid expensive mistakes. The toolkit makes you dramatically more effective (and scalable) than a traditional consultant.
+For clients who want ongoing access to someone who actually understands their environment. The toolkit makes me significantly more efficient than a traditional consultant model — I can cover more ground, faster, with more precision.
 
 ---
 
-## How to Talk About the Tool (Messaging Guidance)
+## How I Talk About This
 
-Never lead with “I built a monitoring tool.”
+I don't lead with the tool. I lead with the problem.
 
-Instead, use language like:
+- *"I've been doing this work since 2004. I built AVD Masters because the tools that existed weren't good enough for the environments I was working in."*
+- *"Most organizations running GPU workloads on AVD are leaving real money on the table and delivering user experience that doesn't reflect what they're paying for the hardware. I built something to make that visible."*
+- *"I don't sell monitoring. I sell clarity, control, and the ability to stop the same expensive problems from happening again."*
 
-- “I built AVD Masters because the existing tools and approaches weren’t good enough for the environments I was seeing.”
-- “It’s not another monitoring platform. It’s an operator’s toolkit designed to surface the expensive, painful problems that actually matter.”
-- “Most organizations have no idea how bad their profile situation is, or how much money they’re wasting on GPU infrastructure while delivering mediocre experience. I built this to make that visible — fast.”
-- “I use it as my unfair advantage. It lets me walk into complex environments and quickly show clients exactly where they’re bleeding money and experience — and give them a clear path forward.”
-
-The tool is proof of depth, not the product. It demonstrates that you don’t just talk about these problems — you’ve built systems to solve them at scale.
+The tool is proof of depth. It shows that I don't just talk about these problems — I've built systems to solve them at scale.
 
 ---
 
-## Suggested LinkedIn About Section (Long Form)
+## LinkedIn About Section
 
-I help organizations actually make Azure Virtual Desktop work — especially when GPUs, strict requirements, or complex user experiences are involved.
+I've been doing enterprise Microsoft infrastructure work since the days of Windows NT 4.0.
 
-Most AVD environments I see have the same expensive problems hiding in plain sight: broken or poorly designed profile architectures, GPU infrastructure that costs a fortune while delivering mediocre performance, and governance gaps that only become obvious during an audit.
+I started at Hypercom learning cryptography and payment security, got deep into Active Directory through the Quest Software years, and have been running migrations — M&A collapses, forest consolidations, cross-platform messaging transitions — since 2004. I've worked on the infrastructure that eventually became Microsoft 365, helped build and sell virtual private cloud services to Verizon Enterprise, and trained migration engineers to get organizations off Exchange, Lotus Notes, GroupWise, and early Gmail when nobody had a real practice for it yet.
 
-I got tired of watching the same painful, recurring issues destroy user experience and burn money. So I built AVD Masters — a Python-first toolkit specifically designed to expose these problems clearly and help teams fix them properly.
+Since 2019 I've been independent, working with organizations that are serious about getting AVD right — especially GPU workloads — and with smaller managed service providers that want to deliver world-class Microsoft services without acting like a large systems integrator.
 
-I don’t sell monitoring. I sell clarity, control, and the ability to stop making the same expensive mistakes.
+I built AVD Masters because the existing tools weren't good enough for the environments I was seeing. It's not a monitoring platform. It's an operator's toolkit — built to expose the expensive, painful problems that generic tools miss and turn that into clear, quantified, defensible intelligence.
 
-If your AVD environment (especially GPU workloads) feels more fragile or expensive than it should, I can help.
+I don't sell dashboards. I sell clarity, control, and the ability to stop making the same expensive mistakes.
 
-Specialties:
-- FSLogix & user profile architecture (the #1 reason AVD feels terrible)
-- High-performance / GPU AVD optimization
-- Cost intelligence and waste reduction
-- Governance and compliance (particularly CMMC 2.0 / regulated environments)
-- Turning operational chaos into something defensible and manageable
+If your AVD environment feels more fragile or expensive than it should, I can help.
 
----
-
-## One-Page Capability Overview (Structure You Can Use)
-
-**Title:** Making AVD Actually Work — Without the Expensive Surprises
-
-**Opening:**
-Most organizations running Azure Virtual Desktop — especially GPU workloads — are leaving money and user experience on the table. The problems are rarely the technology itself. They’re almost always in how it was set up and how it’s being operated.
-
-**What I bring:**
-- Deep, battle-tested experience with the real problems that make AVD painful in production
-- AVD Masters: a purpose-built, Python-first toolkit designed to surface the issues that generic tools miss
-- A ruthless focus on the areas that actually move the needle (profiles, experience, cost, governance)
-
-**Signature Work:**
-- Profile & FSLogix Remediation Programs
-- AVD Operational Maturity Assessments
-- GPU Workload Optimization & Governance
-- Ongoing operational partnership for complex environments
-
-**The difference:**
-I don’t just produce reports. I combine real operator experience with a toolkit that makes that experience scalable and repeatable. You get clarity fast, and a clear path to fix the expensive problems.
+**Specialties:**
+- FSLogix and user profile architecture
+- GPU AVD optimization and cost intelligence
+- Enterprise migrations (Exchange, AD, M365)
+- Governance and compliance in regulated environments (CMMC 2.0 / NIST 800-171)
+- Building managed service practices around Microsoft infrastructure
 
 ---
 
-This is a strong foundation. You can copy, adapt, and evolve it. The core message is consistent:
+## One-Page Capability Overview
 
-You’re not another consultant with another tool.  
-You’re the person who built the tool because you were tired of watching the same problems destroy AVD environments — and now you use it to help organizations finally get control.
+**Making AVD Actually Work — Especially When It's Expensive and Regulated**
 
-Want me to refine any section, turn this into a full proposal template, or create a shorter “elevator” version? Just say the word.
+Most organizations running Azure Virtual Desktop GPU workloads are spending heavily and not getting what they're paying for. The problem is rarely the hardware. It's the profile architecture, the operational gaps, and the absence of real visibility into what the infrastructure is actually doing.
+
+I bring 25+ years of enterprise Microsoft infrastructure experience, a background in identity and migration work that spans Fortune 500 M&A events to CMMC-regulated defense environments, and a purpose-built Python toolkit designed to expose the problems that generic monitoring tools miss.
+
+**What I do:**
+- Profile and FSLogix remediation — the number one reason AVD feels broken
+- GPU workload optimization — making expensive hardware earn its keep
+- Cost intelligence — accurate FinOps attribution, not guesswork
+- Governance and compliance evidence — built for regulated environments
+- Migration and consolidation — from legacy platforms to modern AVD at scale
+
+**What makes this different:**
+I'm not another consultant with another tool. I built the tool because the tools that existed weren't good enough. It reflects 25 years of operational pattern recognition turned into something repeatable, scalable, and honest.
+
+You get clarity fast, and a clear path to fix the problems that are actually costing you.

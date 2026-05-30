@@ -1,6 +1,6 @@
 # AVD Masters
 
-**The intelligence platform for organizations that can no longer afford to guess about their GPU infrastructure.**
+**Built by someone who has been doing this work since Windows NT 4.0. For organizations that have decided it’s time to actually understand what their GPU infrastructure is doing.**
 
 Most teams running serious GPU workloads on Azure Virtual Desktop know they’re spending heavily. What they don’t know — with any real precision — is whether that spend is justified, where the waste is hiding, or how exposed they are from a governance and compliance standpoint.
 
@@ -10,6 +10,8 @@ Traditional tools either charge you a premium to move your data into Azure Monit
 *If an auditor walked in tomorrow, how would we prove we’re in control of this environment?*
 
 AVD Masters exists for organizations that have moved past hoping the numbers look fine. It gives you direct truth from the hardware, turns that truth into clear, quantified intelligence, and produces the kind of governance artifacts that actually hold up when scrutiny arrives.
+
+This is not a product team’s idea of what AVD monitoring should look like. It was built by a technologist with 25+ years of enterprise Microsoft infrastructure experience — Active Directory, migrations, M&A consolidations, regulated environments, broken profiles, and expensive hardware delivering mediocre results. It is the modern Python successor to the kind of scripts and tooling that have been solving these problems in production for a long time.
 
 ---
 
@@ -118,9 +120,21 @@ AVD Masters is not trying to be another monitoring platform with better charts.
 
 It is an attempt to build something more useful: a system that respects both the enormous cost of modern GPU infrastructure and the very real governance requirements that come with running it at scale.
 
+It is also deliberately built to run against more than one VDI infrastructure. The environments that need this kind of intelligence increasingly have heterogeneous estates — AVD alongside Citrix or other platforms — and the tooling should work across all of it without requiring a different product for each vendor.
+
 The organizations that get the most value from it tend to share a few characteristics. They know their GPU workloads are expensive. They are no longer satisfied with hoping the spend is reasonable. And they operate in environments where “we think we’re in control” is not an acceptable answer when difficult questions are asked.
 
-If that describes your situation, this platform was built with you in mind.
+If that describes your situation, this was built with you in mind.
+
+---
+
+## About
+
+Built and maintained by Taz Khemraj — independent consultant, 25+ years in enterprise Microsoft infrastructure.
+
+Background in Active Directory, enterprise migrations, M&A consolidations, and regulated environment operations. Formerly Quest Software, AZALEOS/Verizon, Dimension Data/NTT. Co-founder of Halcyon. Built the kind of work that eventually became Microsoft 365 before it had that name.
+
+If your AVD environment — especially GPU workloads — is more expensive or fragile than it should be, [get in touch](https://github.com/tkhemraj).
 
 ---
 
