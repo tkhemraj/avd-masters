@@ -16,7 +16,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: ["python", "-m", "avd_masters", "--exporter-only", "--config", "/config/config.yaml"]
+    command: ["python", "-m", "vdm", "--exporter-only", "--config", "/config/config.yaml"]
     volumes:
       - ./config.yaml:/config/config.yaml:ro
     ports:

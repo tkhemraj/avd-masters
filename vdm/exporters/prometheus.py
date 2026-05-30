@@ -77,22 +77,22 @@ class PrometheusExporter:
 
         # ── meta ────────────────────────────────────────────────────────────
         self.m_last_scrape = g(
-            "avd_masters_last_collection_timestamp_seconds",
+            "vdm_last_collection_timestamp_seconds",
             "Unix timestamp of the last successful collection per platform",
             ["platform"],
         )
         self.m_collection_duration = g(
-            "avd_masters_collection_duration_seconds",
+            "vdm_collection_duration_seconds",
             "Duration of last collection pass in seconds",
             ["platform"],
         )
         self.m_collection_errors = c(
-            "avd_masters_collection_errors_total",
+            "vdm_collection_errors_total",
             "Total number of collection errors per platform",
             ["platform"],
         )
         self.m_overall_status = g(
-            "avd_masters_overall_status",
+            "vdm_overall_status",
             "Overall health status (0=ok 1=warn 2=crit 3=unknown 4=offline)",
             ["platform"],
         )

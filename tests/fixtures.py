@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from avd_masters.models.metrics import (
+from vdm.models.metrics import (
     AVDHostPool,
     AVDSessionHost,
     AVDSnapshot,
@@ -216,7 +216,7 @@ def make_citrix_snapshot() -> CitrixSnapshot:
 
 def make_gpu_snapshot():
     from datetime import datetime, timezone
-    from avd_masters.models.gpu import (
+    from vdm.models.gpu import (
         GPUSnapshot, HostGPUData, PhysicalGPU, VGPUInstance, VGPUProfile, GPUEngine,
     )
     now = datetime.now(timezone.utc)

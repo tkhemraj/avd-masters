@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the AVD Masters Grafana dashboard JSON.
 
-Run: python grafana/dashboard_gen.py > grafana/avd_masters_dashboard.json
+Run: python grafana/dashboard_gen.py > grafana/vdm_dashboard.json
 """
 
 import json
@@ -247,7 +247,7 @@ def build():
 
     panels.append(stat(
         pid, "AVD Status",
-        'avd_masters_overall_status{platform="avd"}',
+        'vdm_overall_status{platform="avd"}',
         x=0, y=y, w=4, h=3,
         mappings=STATUS_MAPPINGS, thresholds=STATUS_THRESHOLDS,
     ))
@@ -255,7 +255,7 @@ def build():
 
     panels.append(stat(
         pid, "RDS Status",
-        'avd_masters_overall_status{platform="rds"}',
+        'vdm_overall_status{platform="rds"}',
         x=4, y=y, w=4, h=3,
         mappings=STATUS_MAPPINGS, thresholds=STATUS_THRESHOLDS,
     ))
@@ -263,7 +263,7 @@ def build():
 
     panels.append(stat(
         pid, "Citrix Status",
-        'avd_masters_overall_status{platform="citrix"}',
+        'vdm_overall_status{platform="citrix"}',
         x=8, y=y, w=4, h=3,
         mappings=STATUS_MAPPINGS, thresholds=STATUS_THRESHOLDS,
     ))
@@ -284,7 +284,7 @@ def build():
 
     panels.append(stat(
         pid, "Collection Errors (24h)",
-        "increase(avd_masters_collection_errors_total[24h])",
+        "increase(vdm_collection_errors_total[24h])",
         x=18, y=y, w=6, h=3,
         thresholds={
             "mode": "absolute",
@@ -682,8 +682,8 @@ def build():
 
     # ── Assemble dashboard ───────────────────────────────────────────────────
     return {
-        "uid": "avd-masters-v1",
-        "title": "AVD Masters Suite",
+        "uid": "vdm-v1",
+        "title": "VirtualDesktopMasters",
         "description": "Unified monitoring for Azure Virtual Desktop, RDS Terminal Services, and Citrix VDI",
         "tags": ["avd", "rds", "citrix", "vdi", "monitoring"],
         "timezone": "browser",

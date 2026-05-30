@@ -1,32 +1,32 @@
-{{/* AVD Masters Suite — Alertmanager MS Teams templates */}}
+{{/* VirtualDesktopMasters Suite — Alertmanager MS Teams templates */}}
 
 {{/* ── Helpers ─────────────────────────────────────────────────────────── */}}
 
 {{/* Severity icon prefix */}}
-{{ define "avd_masters.icon" -}}
+{{ define "vdm.icon" -}}
   {{- if eq .CommonLabels.severity "critical" }}🔴{{ else if eq .CommonLabels.severity "warning" }}⚠️{{ else }}ℹ️{{ end -}}
 {{ end }}
 
 {{/* Hex colour for the Teams card accent bar */}}
-{{ define "avd_masters.color" -}}
+{{ define "vdm.color" -}}
   {{- if eq .CommonLabels.severity "critical" }}FF0000{{ else if eq .CommonLabels.severity "warning" }}FFA500{{ else if eq .Status "resolved" }}00CC44{{ else }}808080{{ end -}}
 {{ end }}
 
 {{/* Platform display name */}}
-{{ define "avd_masters.platform" -}}
+{{ define "vdm.platform" -}}
   {{- if eq .CommonLabels.platform "avd" }}Azure Virtual Desktop{{ else if eq .CommonLabels.platform "rds" }}Terminal Services (RDS){{ else if eq .CommonLabels.platform "citrix" }}Citrix VDI{{ else }}{{ .CommonLabels.platform }}{{ end -}}
 {{ end }}
 
 {{/* ── Card title ────────────────────────────────────────────────────────── */}}
-{{ define "avd_masters.title" -}}
-  {{- template "avd_masters.icon" . }}
+{{ define "vdm.title" -}}
+  {{- template "vdm.icon" . }}
   {{- if eq .Status "resolved" }} RESOLVED — {{ else }} {{ .CommonLabels.severity | toUpper }} — {{ end -}}
-  {{- template "avd_masters.platform" . }}
+  {{- template "vdm.platform" . }}
   {{- if .CommonLabels.alertname }} · {{ .CommonLabels.alertname }}{{ end -}}
 {{ end }}
 
 {{/* ── Card body (Markdown, rendered by Teams) ─────────────────────────── */}}
-{{ define "avd_masters.text" -}}
+{{ define "vdm.text" -}}
 {{- if eq .Status "resolved" -}}
 ✅ **All alerts in this group have resolved.**
 
@@ -58,7 +58,7 @@
 {{ end }}
 
 {{/* ── Summary line (used as Teams notification toast) ─────────────────── */}}
-{{ define "avd_masters.summary" -}}
-  {{- template "avd_masters.icon" . }} [{{ .Status | toUpper }}] {{ template "avd_masters.platform" . }}: {{ .CommonLabels.alertname }}
+{{ define "vdm.summary" -}}
+  {{- template "vdm.icon" . }} [{{ .Status | toUpper }}] {{ template "vdm.platform" . }}: {{ .CommonLabels.alertname }}
   {{- if gt (len .Alerts.Firing) 1 }} (+{{ sub (len .Alerts.Firing) 1 }} more){{ end -}}
 {{ end }}

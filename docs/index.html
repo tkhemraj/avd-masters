@@ -183,7 +183,7 @@
       <div class="feature-card">
         <div class="feature-icon">🖥️</div>
         <h3>Live TUI Dashboard</h3>
-        <p>Full-screen Rich terminal dashboard with live refresh. Three platform panels plus GPU slice panel. Runs anywhere with a terminal — SSH, bastion, local. <code>python -m avd_masters</code></p>
+        <p>Full-screen Rich terminal dashboard with live refresh. Three platform panels plus GPU slice panel. Runs anywhere with a terminal — SSH, bastion, local. <code>python -m vdm</code></p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📊</div>
@@ -330,8 +330,8 @@
 
     <div class="code-block mt-8">
       <div class="code-header"><span>shell</span></div>
-      <div class="code-body"><span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze</span>               <span class="c-comment"># findings only (default)</span>
-<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze --show-passes</span>  <span class="c-comment"># include all passing checks</span>
+      <div class="code-body"><span class="c-cmd">python -m vdm</span> <span class="c-flag">--analyze</span>               <span class="c-comment"># findings only (default)</span>
+<span class="c-cmd">python -m vdm</span> <span class="c-flag">--analyze --show-passes</span>  <span class="c-comment"># include all passing checks</span>
 echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</span></div>
     </div>
 
@@ -372,18 +372,15 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
     <p class="section-eyebrow">Prometheus Metrics</p>
     <h2 class="section-title">73+ metric samples per scrape</h2>
     <p class="section-sub">Status gauges use numeric encoding: <code>0=ok · 1=warning · 2=critical · 3=unknown · 4=offline</code></p>
-    <p class="section-sub mt-2" style="font-size:0.8rem;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:10px 14px;color:var(--muted)">
-      ℹ️ Metric names currently use the <code>avd_masters_</code> prefix — this is the CI pipeline name and will be updated to <code>vdm_</code> in a future release. Existing Prometheus rules and Grafana dashboards will continue to work until the migration is complete.
-    </p>
 
     <table class="metrics-table mt-8">
       <thead>
         <tr><th>Metric</th><th>Type</th><th>Platform</th><th>Key Labels</th><th>Description</th></tr>
       </thead>
       <tbody>
-        <tr><td class="metric-name">avd_masters_overall_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Rollup health status per platform (0–4)</td></tr>
-        <tr><td class="metric-name">avd_masters_last_collection_timestamp_seconds</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Unix timestamp of last successful collection</td></tr>
-        <tr><td class="metric-name">avd_masters_collection_errors_total</td><td class="metric-type">counter</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Cumulative collection errors per platform</td></tr>
+        <tr><td class="metric-name">vdm_overall_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Rollup health status per platform (0–4)</td></tr>
+        <tr><td class="metric-name">vdm_last_collection_timestamp_seconds</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Unix timestamp of last successful collection</td></tr>
+        <tr><td class="metric-name">vdm_collection_errors_total</td><td class="metric-type">counter</td><td><span class="platform-pill pill-all">all</span></td><td>platform</td><td>Cumulative collection errors per platform</td></tr>
         <tr><td class="metric-name">avd_host_pool_status</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Host pool health status (0–4)</td></tr>
         <tr><td class="metric-name">avd_host_pool_active_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Active user sessions in the pool</td></tr>
         <tr><td class="metric-name">avd_host_pool_disconnected_sessions</td><td class="metric-type">gauge</td><td><span class="platform-pill pill-avd">AVD</span></td><td>host_pool, resource_group</td><td>Disconnected sessions in the pool</td></tr>
@@ -494,9 +491,6 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
     <p class="section-eyebrow">Get Running</p>
     <h2 class="section-title">Up in five minutes</h2>
     <p class="section-sub">Python 3.11+, a config file, and WinRM access to your Windows hosts.</p>
-    <p class="section-sub mt-2" style="font-size:0.8rem;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:10px 14px;color:var(--muted)">
-      ℹ️ CLI commands currently use <code>python -m avd_masters</code> — the module name is a CI pipeline reference and will be renamed to <code>vdm</code> in a future release.
-    </p>
 
     <div class="steps">
       <div class="step">
@@ -546,16 +540,16 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
           <div class="code-block">
             <div class="code-header"><span>shell</span></div>
             <div class="code-body"><span class="c-comment"># Live TUI dashboard (default)</span>
-<span class="c-cmd">python -m avd_masters</span>
+<span class="c-cmd">python -m vdm</span>
 
 <span class="c-comment"># Headless + Prometheus exporter only</span>
-<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--exporter-only</span>
+<span class="c-cmd">python -m vdm</span> <span class="c-flag">--exporter-only</span>
 
 <span class="c-comment"># Best-practice analysis report</span>
-<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--analyze</span>
+<span class="c-cmd">python -m vdm</span> <span class="c-flag">--analyze</span>
 
 <span class="c-comment"># One-shot JSON snapshot</span>
-<span class="c-cmd">python -m avd_masters</span> <span class="c-flag">--once</span> | jq .rds.license_info</div>
+<span class="c-cmd">python -m vdm</span> <span class="c-flag">--once</span> | jq .rds.license_info</div>
           </div>
         </div>
       </div>
@@ -704,7 +698,7 @@ echo $?  <span class="c-comment"># 0 = all OK, 2 = CRITICAL findings present</sp
       <li><a href="https://github.com/tkhemraj/avd-masters/issues">Issues</a></li>
       <li><a href="https://github.com/tkhemraj/avd-masters/blob/master/config/config.yaml.example">config.yaml.example</a></li>
       <li><a href="https://github.com/tkhemraj/avd-masters/tree/master/prometheus/alerts">Alert Rules</a></li>
-      <li><a href="https://github.com/tkhemraj/avd-masters/blob/master/grafana/avd_masters_dashboard.json">Grafana JSON</a></li>
+      <li><a href="https://github.com/tkhemraj/avd-masters/blob/master/grafana/vdm_dashboard.json">Grafana JSON</a></li>
     </ul>
   </div>
 </footer>

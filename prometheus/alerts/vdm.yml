@@ -6,12 +6,12 @@
 #
 # Reference in prometheus.yml:
 #   rule_files:
-#     - /etc/prometheus/alerts/avd_masters.yml
+#     - /etc/prometheus/alerts/vdm.yml
 
 groups:
 
   # ── Azure Virtual Desktop ────────────────────────────────────────────────
-  - name: avd_masters.avd
+  - name: vdm.avd
     interval: 60s
     rules:
 
@@ -133,7 +133,7 @@ groups:
 
 
   # ── Terminal Services (RDS) ──────────────────────────────────────────────
-  - name: avd_masters.rds
+  - name: vdm.rds
     interval: 60s
     rules:
 
@@ -278,7 +278,7 @@ groups:
 
 
   # ── Citrix VDI ───────────────────────────────────────────────────────────
-  - name: avd_masters.citrix
+  - name: vdm.citrix
     interval: 60s
     rules:
 
@@ -376,12 +376,12 @@ groups:
 
 
   # ── Infrastructure / meta ────────────────────────────────────────────────
-  - name: avd_masters.meta
+  - name: vdm.meta
     interval: 60s
     rules:
 
-      - alert: AVDMastersDataStale
-        expr: time() - avd_masters_last_collection_timestamp_seconds > 300
+      - alert: VDMDataStale
+        expr: time() - vdm_last_collection_timestamp_seconds > 300
         for: 0m
         labels:
           severity: warning
@@ -394,8 +394,8 @@ groups:
             Last collection was {{ $value | humanizeDuration }} ago.
             Check the avd-masters process and connectivity to the platform.
 
-      - alert: AVDMastersDataStaleCritical
-        expr: time() - avd_masters_last_collection_timestamp_seconds > 600
+      - alert: VDMDataStaleCritical
+        expr: time() - vdm_last_collection_timestamp_seconds > 600
         for: 0m
         labels:
           severity: critical
@@ -407,8 +407,8 @@ groups:
             in more than 10 minutes. Dashboard data is unreliable.
             Last seen {{ $value | humanizeDuration }} ago.
 
-      - alert: AVDMastersHighErrorRate
-        expr: increase(avd_masters_collection_errors_total[15m]) > 5
+      - alert: VDMHighErrorRate
+        expr: increase(vdm_collection_errors_total[15m]) > 5
         for: 0m
         labels:
           severity: warning

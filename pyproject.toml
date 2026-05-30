@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 [project]
-name = "avd-masters"
+name = "vdm"
 version = "0.1.0"
 description = "Unified monitoring suite for Azure Virtual Desktop, RDS, and Citrix VDI"
 requires-python = ">=3.11"
@@ -24,8 +24,8 @@ prometheus = ["prometheus_client>=0.20"]
 dev = ["pytest>=8.0", "pytest-mock>=3.12"]
 
 [project.scripts]
-avd-masters = "avd_masters.__main__:main"
+vdm = "vdm.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["avd_masters*"]
+include = ["vdm*"]

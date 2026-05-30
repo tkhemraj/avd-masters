@@ -5,12 +5,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt prometheus_client
 
-COPY avd_masters/ avd_masters/
+COPY vdm/ vdm/
 
 # Drop to non-root
-RUN useradd -r -s /bin/false avdmasters
-USER avdmasters
+RUN useradd -r -s /bin/false vdm
+USER vdm
 
 EXPOSE 9090
-ENTRYPOINT ["python", "-m", "avd_masters"]
+ENTRYPOINT ["python", "-m", "vdm"]
 CMD ["--help"]

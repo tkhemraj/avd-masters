@@ -1,4 +1,4 @@
-"""Entry point: python -m avd_masters [--config path] [--once] [--no-dashboard] [--exporter-only]"""
+"""Entry point: python -m vdm [--config path] [--once] [--no-dashboard] [--exporter-only]"""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def _setup_logging(level: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="avd-masters",
+        prog="vdm",
         description="AVD Masters Suite — unified monitoring for AVD, RDS, and Citrix VDI",
     )
     parser.add_argument(
@@ -106,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        logging.getLogger("avd_masters").info(
+        logging.getLogger("vdm").info(
             "Prometheus exporter mode — /metrics on :%s, polling every %ss. Ctrl+C to stop.",
             port, interval,
         )
@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_dashboard:
         import time
         interval = config.get("poll_interval_s", 60)
-        logging.getLogger("avd_masters").info(
+        logging.getLogger("vdm").info(
             "Running headless, polling every %ss. Ctrl+C to stop.", interval
         )
         try:

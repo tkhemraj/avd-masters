@@ -18,7 +18,7 @@ class BaseCollector(ABC):
 
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
-        self.logger = logging.getLogger(f"avd_masters.collector.{self.name}")
+        self.logger = logging.getLogger(f"vdm.collector.{self.name}")
 
     @abstractmethod
     def collect(self) -> Any:

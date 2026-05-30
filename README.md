@@ -7,8 +7,6 @@
 
 Unified monitoring for **Azure Virtual Desktop**, **RDS Terminal Services**, and **Citrix VDI** from a single Python process. Covers the full observability stack: live TUI dashboard, Prometheus exporter, Grafana dashboards, Alertmanager with MS Teams delivery, scored best-practice analysis, and GPU/vGPU slice ROI monitoring via `nvidia-smi` over WinRM.
 
-> **Module naming**: The Python module (`avd_masters`) and Prometheus metric prefix (`avd_masters_`) are CI pipeline names pending rename to `vdm` in an upcoming release. Existing dashboards and alert rules will continue to function through the transition.
-
 ---
 
 ## Architecture
@@ -174,22 +172,22 @@ Full config reference: [tkhemraj.github.io/avd-masters/#reference](https://tkhem
 
 ```bash
 # Full TUI dashboard with live refresh
-python -m avd_masters [--config PATH]
+python -m vdm [--config PATH]
 
 # Headless loop — runs collectors and fires notifiers, no TUI
-python -m avd_masters --no-dashboard
+python -m vdm --no-dashboard
 
 # Prometheus exporter only — requires prometheus: block in config
-python -m avd_masters --exporter-only
+python -m vdm --exporter-only
 
 # Best-practice analysis — exit 0 (OK) or 2 (CRITICAL findings present)
-python -m avd_masters --analyze [--show-passes]
+python -m vdm --analyze [--show-passes]
 
 # Single collection pass to stdout as JSON
-python -m avd_masters --once | jq '.rds.license_info'
+python -m vdm --once | jq '.rds.license_info'
 
 # Override log level
-python -m avd_masters --log-level DEBUG
+python -m vdm --log-level DEBUG
 ```
 
 ---
@@ -207,17 +205,17 @@ scrape_configs:
     scrape_timeout: 30s
 
 rule_files:
-  - /etc/prometheus/alerts/avd_masters.yml
+  - /etc/prometheus/alerts/vdm.yml
 ```
 
-Copy `prometheus/alerts/avd_masters.yml` to your Prometheus server. 29 rules across four groups:
+Copy `prometheus/alerts/vdm.yml` to your Prometheus server. 29 rules across four groups:
 
 | Group | Rules | Notes |
 |---|---|---|
-| `avd_masters.avd` | 9 | Session host offline/critical/warning, CPU/memory, pool degraded |
-| `avd_masters.rds` | 11 | Host offline, CPU/memory/disk, CAL critical (>95%) / warning (>80%), broker down |
-| `avd_masters.citrix` | 6 | Controller down, major outage (>50% VDAs unregistered), delivery group down |
-| `avd_masters.meta` | 3 | Stale data warning (>5m) / critical (>10m), high error rate |
+| `vdm.avd` | 9 | Session host offline/critical/warning, CPU/memory, pool degraded |
+| `vdm.rds` | 11 | Host offline, CPU/memory/disk, CAL critical (>95%) / warning (>80%), broker down |
+| `vdm.citrix` | 6 | Controller down, major outage (>50% VDAs unregistered), delivery group down |
+| `vdm.meta` | 3 | Stale data warning (>5m) / critical (>10m), high error rate |
 
 All rules carry `severity` and `platform` labels. Duration tuning: 2m for offline/broker failures, 5m for resource criticals, 10m for warnings, 30m for licensing.
 
@@ -229,14 +227,14 @@ Full metrics catalog: [tkhemraj.github.io/avd-masters/#metrics](https://tkhemraj
 
 ## Grafana
 
-Import `grafana/avd_masters_dashboard.json` (Grafana 10+, Prometheus datasource).
+Import `grafana/vdm_dashboard.json` (Grafana 10+, Prometheus datasource).
 
 25 panels across three platform rows plus a summary row. All status columns use value-mapped colour-background display (0→green, 1→yellow, 2→red). Table panels use instant queries with `merge` transform to show current state rather than time series.
 
 To rebuild after modifying panel definitions:
 
 ```bash
-python grafana/dashboard_gen.py > grafana/avd_masters_dashboard.json
+python grafana/dashboard_gen.py > grafana/vdm_dashboard.json
 ```
 
 ---
@@ -266,7 +264,7 @@ For Alertmanager < 0.27, use the `prometheus-msteams` proxy — configuration no
 ## Best-practice analysis
 
 ```bash
-python -m avd_masters --analyze
+python -m vdm --analyze
 ```
 
 Scored report (critical −10pts, warning −3pts) per platform. Actionable findings only by default; `--show-passes` includes passing checks. Exit code 2 when any CRITICAL finding is present — suitable for CI gates and scheduled health checks.
@@ -327,7 +325,7 @@ The `avd-masters` service accepts Azure credentials via environment variables pa
 ## Project structure
 
 ```
-avd_masters/
+vdm/
 ├── collectors/       avd.py  rds.py  citrix.py  gpu.py  base.py
 ├── models/           metrics.py  gpu.py
 ├── analysis/         avd.py  rds.py  citrix.py  gpu.py  report.py  base.py
@@ -339,14 +337,14 @@ avd_masters/
 └── utils.py          sanitize_error(), resolve_env_vars()
 
 prometheus/
-├── alerts/           avd_masters.yml          29 rules, 4 groups
+├── alerts/           vdm.yml          29 rules, 4 groups
 ├── alertmanager/     alertmanager.yml          routing, inhibition, receivers
-│                     templates/avd_masters.tmpl
+│                     templates/vdm.tmpl
 ├── docker-compose.yml
 └── prometheus.yml.example
 
 grafana/
-├── avd_masters_dashboard.json   25-panel Grafana 10+ dashboard
+├── vdm_dashboard.json   25-panel Grafana 10+ dashboard
 └── dashboard_gen.py             dashboard source / regeneration script
 
 docs/                GitHub Pages (tkhemraj.github.io/avd-masters)

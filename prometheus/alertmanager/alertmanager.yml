@@ -21,7 +21,7 @@ global:
       insecure_skip_verify: false   # always verify TLS for webhook endpoints
 
 templates:
-  - /etc/alertmanager/templates/avd_masters.tmpl
+  - /etc/alertmanager/templates/vdm.tmpl
 
 # ── Routing tree ────────────────────────────────────────────────────────────
 #
@@ -43,7 +43,7 @@ route:
 
     # ── Meta / infrastructure alerts ────────────────────────────────────────
     - matchers:
-        - alertname =~ "AVDMastersData.*|AVDMastersHighErrorRate"
+        - alertname =~ "VDMData.*|VDMHighErrorRate"
       receiver: teams-meta
       group_wait:      5m
       group_interval:  10m
@@ -78,7 +78,7 @@ inhibit_rules:
   # Stale data → inhibit ALL other alerts for that platform.
   # If we can't collect data, every per-host status is unreliable.
   - source_matchers:
-      - alertname = "AVDMastersDataStaleCritical"
+      - alertname = "VDMDataStaleCritical"
     target_matchers:
       - platform =~ ".+"
     equal: [platform]
@@ -143,9 +143,9 @@ receivers:
   - name: teams-critical
     msteams_configs:
       - webhook_url: "${ TEAMS_WEBHOOK_CRITICAL }"
-        title:   '{{ template "avd_masters.title" . }}'
-        text:    '{{ template "avd_masters.text"  . }}'
-        summary: '{{ template "avd_masters.summary" . }}'
+        title:   '{{ template "vdm.title" . }}'
+        text:    '{{ template "vdm.text"  . }}'
+        summary: '{{ template "vdm.summary" . }}'
         http_config:
           tls_config:
             insecure_skip_verify: false
@@ -154,9 +154,9 @@ receivers:
   - name: teams-warning
     msteams_configs:
       - webhook_url: "${ TEAMS_WEBHOOK_WARNING }"
-        title:   '{{ template "avd_masters.title" . }}'
-        text:    '{{ template "avd_masters.text"  . }}'
-        summary: '{{ template "avd_masters.summary" . }}'
+        title:   '{{ template "vdm.title" . }}'
+        text:    '{{ template "vdm.text"  . }}'
+        summary: '{{ template "vdm.summary" . }}'
         http_config:
           tls_config:
             insecure_skip_verify: false
@@ -165,9 +165,9 @@ receivers:
   - name: teams-meta
     msteams_configs:
       - webhook_url: "${ TEAMS_WEBHOOK_META }"
-        title:   '{{ template "avd_masters.title" . }}'
-        text:    '{{ template "avd_masters.text"  . }}'
-        summary: '{{ template "avd_masters.summary" . }}'
+        title:   '{{ template "vdm.title" . }}'
+        text:    '{{ template "vdm.text"  . }}'
+        summary: '{{ template "vdm.summary" . }}'
         http_config:
           tls_config:
             insecure_skip_verify: false

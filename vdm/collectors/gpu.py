@@ -376,7 +376,7 @@ class GPUCollector:
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.gpu_cfg = config.get("gpu", {})
-        self.logger = logging.getLogger("avd_masters.collector.gpu")
+        self.logger = logging.getLogger("vdm.collector.gpu")
 
     def _rds_session_factory(self, hostname: str):
         """Reuse RDS collector's WinRM session logic."""

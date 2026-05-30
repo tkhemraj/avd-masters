@@ -8,7 +8,7 @@ global:
     environment: production
 
 rule_files:
-  - /etc/prometheus/alerts/avd_masters.yml
+  - /etc/prometheus/alerts/vdm.yml
 
 # Alertmanager — adjust to your deployment
 alerting:
@@ -19,7 +19,7 @@ alerting:
 scrape_configs:
 
   # AVD Masters Suite exporter
-  - job_name: avd_masters
+  - job_name: vdm
     static_configs:
       - targets: ["avd-masters-host:9090"]
         labels:
