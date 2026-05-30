@@ -1,4 +1,4 @@
-# Monitoring stack: Prometheus + Alertmanager + AVD Masters exporter
+# Monitoring stack: Prometheus + Alertmanager + VirtualDesktopMasters exporter
 #
 # Usage:
 #   export TEAMS_WEBHOOK_CRITICAL="https://outlook.office.com/webhook/..."
@@ -6,7 +6,7 @@
 #   export TEAMS_WEBHOOK_META="https://outlook.office.com/webhook/..."
 #   docker-compose up -d
 #
-# AVD Masters credentials are passed via a config.yaml volume mount.
+# VirtualDesktopMasters credentials are passed via a config.yaml volume mount.
 # Never put webhook URLs or platform passwords in this file — use env vars
 # or Docker secrets (see the secrets: block commented out below).
 

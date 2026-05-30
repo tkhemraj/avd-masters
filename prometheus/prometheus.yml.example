@@ -1,4 +1,4 @@
-# Example prometheus.yml showing how to wire up AVD Masters scraping and alerts.
+# Example prometheus.yml showing how to wire up VirtualDesktopMasters scraping and alerts.
 # Merge the relevant sections into your existing prometheus.yml.
 
 global:
@@ -18,7 +18,7 @@ alerting:
 
 scrape_configs:
 
-  # AVD Masters Suite exporter
+  # VirtualDesktopMasters exporter
   - job_name: vdm
     static_configs:
       - targets: ["avd-masters-host:9090"]

@@ -184,7 +184,7 @@ def _physical_gpu_health(hostname, platform, gpu: PhysicalGPU, t, findings):
         ))
 
     # Idle GPU with no slices
-    if (host_has_vgpu := len(gpu.vgpu_instances) == 0
+    if (len(gpu.vgpu_instances) == 0
             and gpu.gpu_util_pct is not None
             and gpu.gpu_util_pct < 5):
         findings.append(Finding(

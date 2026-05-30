@@ -64,7 +64,7 @@ class TeamsNotifier(BaseNotifier):
             "@type": "MessageCard",
             "@context": "http://schema.org/extensions",
             "themeColor": color,
-            "summary": f"AVD Masters Alert — {alert.platform}",
+            "summary": f"VirtualDesktopMasters Alert — {alert.platform}",
             "sections": [
                 {
                     "activityTitle": f"{icon} **{alert.status.value.upper()}** — {alert.platform}",

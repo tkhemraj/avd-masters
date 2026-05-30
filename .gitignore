@@ -19,5 +19,5 @@ config/**/*.yaml
 .env.*
 
 # Generated render artifacts
-avd_masters_demo.html
-avd_masters_demo.svg
+vdm_demo.html
+vdm_demo.svg

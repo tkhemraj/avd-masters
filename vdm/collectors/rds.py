@@ -61,6 +61,19 @@ _PS_LICENSE = (
 _WINRM_OPERATION_TIMEOUT = 30
 _WINRM_READ_TIMEOUT = 60
 
+_STATUS_SEVERITY = {
+    HealthStatus.OK: 0,
+    HealthStatus.UNKNOWN: 1,
+    HealthStatus.WARNING: 2,
+    HealthStatus.OFFLINE: 3,
+    HealthStatus.CRITICAL: 4,
+}
+
+
+def _escalate(current: HealthStatus, candidate: HealthStatus) -> HealthStatus:
+    """Return whichever status is more severe — never downgrades."""
+    return candidate if _STATUS_SEVERITY.get(candidate, 0) > _STATUS_SEVERITY.get(current, 0) else current
+
 
 def _winrm_run(session, script: str) -> tuple[str, str, int]:
     """Execute a PowerShell script via WinRM and return (stdout, stderr, rc)."""
@@ -70,20 +83,6 @@ def _winrm_run(session, script: str) -> tuple[str, str, int]:
         result.std_err.decode("utf-8", errors="replace").strip(),
         result.status_code,
     )
-
-
-def _parse_uptime(last_boot_str: Optional[str]) -> Optional[float]:
-    """Convert WMI datetime string to uptime hours."""
-    if not last_boot_str:
-        return None
-    try:
-        # WMI format: 20240101120000.000000+000
-        dt_str = last_boot_str[:14]
-        boot = datetime.strptime(dt_str, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-        delta = datetime.now(timezone.utc) - boot
-        return round(delta.total_seconds() / 3600, 1)
-    except Exception:
-        return None
 
 
 class RDSCollector(BaseCollector):
@@ -166,27 +165,31 @@ class RDSCollector(BaseCollector):
             if rc == 0 and stdout:
                 metrics.disk_percent = _clamp_pct(stdout.strip())
 
-            # Uptime
+            # Uptime — compute directly in PowerShell to avoid locale-dependent datetime parsing
             uptime_ps = (
-                "$boot=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime; "
-                "$boot"
+                "[math]::Round((New-TimeSpan -Start "
+                "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime).TotalHours, 1)"
             )
             stdout, _, rc = _winrm_run(session, uptime_ps)
             if rc == 0 and stdout:
-                uptime_hours = _parse_uptime(stdout.strip())
+                try:
+                    uptime_hours = float(stdout.strip())
+                except ValueError:
+                    pass
 
-            # Status: critical thresholds
+            # Status: escalate to worst condition across CPU/mem/disk
             status = HealthStatus.OK
-            if metrics.cpu_percent is not None and metrics.cpu_percent > 90:
-                status = HealthStatus.CRITICAL
-            elif metrics.cpu_percent is not None and metrics.cpu_percent > 75:
-                status = HealthStatus.WARNING
-            if metrics.memory_percent is not None and metrics.memory_percent > 95:
-                status = HealthStatus.CRITICAL
-            elif metrics.memory_percent is not None and metrics.memory_percent > 85:
-                status = max(status, HealthStatus.WARNING)  # type: ignore[assignment]
-            if metrics.disk_percent is not None and metrics.disk_percent > 95:
-                status = HealthStatus.CRITICAL
+            for val, warn_t, crit_t in (
+                (metrics.cpu_percent, 75.0, 90.0),
+                (metrics.memory_percent, 85.0, 95.0),
+                (metrics.disk_percent, 80.0, 95.0),
+            ):
+                if val is None:
+                    continue
+                if val > crit_t:
+                    status = _escalate(status, HealthStatus.CRITICAL)
+                elif val > warn_t:
+                    status = _escalate(status, HealthStatus.WARNING)
 
             return status, metrics, uptime_hours
 
@@ -203,7 +206,8 @@ class RDSCollector(BaseCollector):
             session = self._make_session(broker)
             ps = (
                 "Get-RDUserSession -ConnectionBroker localhost | "
-                "Select-Object UserName,HostServer,SessionState,IdleTime,LogonTime | "
+                "Select-Object UserName,HostServer,SessionState,LogonTime,"
+                "@{N='IdleMinutes';E={[int]$_.IdleTime.TotalMinutes}} | "
                 "ConvertTo-Json -Compress"
             )
             stdout, stderr, rc = _winrm_run(session, ps)
@@ -229,7 +233,7 @@ class RDSCollector(BaseCollector):
                         username=s.get("UserName") or "unknown",
                         state=state,
                         host=s.get("HostServer"),
-                        idle_minutes=s.get("IdleTime"),
+                        idle_minutes=s.get("IdleMinutes"),
                     )
                 )
         except Exception as exc:

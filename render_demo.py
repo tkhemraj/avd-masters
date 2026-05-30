@@ -1,4 +1,4 @@
-"""Render the AVD Masters dashboard to an HTML file for preview."""
+"""Render the VirtualDesktopMasters dashboard to an HTML file for preview."""
 
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ layout = render_dashboard(snap)
 # Export to SVG (standalone, no external deps)
 c = Console(record=True, width=200, force_terminal=True)
 c.print(layout)
-svg = c.export_svg(title="AVD Masters Suite — Demo")
+svg = c.export_svg(title="VirtualDesktopMasters — Demo")
 Path("vdm_demo.svg").write_text(svg)
 print("Saved: vdm_demo.svg")
 
