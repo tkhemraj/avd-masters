@@ -12,6 +12,15 @@ from typing import Optional
 from ..models.gpu import GPUSnapshot, HostGPUData, PhysicalGPU, VGPUInstance
 from .base import Category, Finding, Severity
 
+# Canonical platform labels — must match the platform analysers (avd/rds/citrix)
+# so GPU findings score under the same platform rather than a separate "CITRIX".
+_PLATFORM_LABELS = {"avd": "AVD", "rds": "RDS", "citrix": "Citrix"}
+
+
+def _canon_platform(platform: str) -> str:
+    return _PLATFORM_LABELS.get((platform or "").lower(), (platform or "").upper())
+
+
 _DEFAULTS = {
     # vGPU slice sizing
     "fb_underused_pct":        20.0,   # FB < 20% used → profile too large
@@ -42,7 +51,7 @@ def analyse(snap: GPUSnapshot, cfg: Optional[dict] = None) -> list[Finding]:
     for hostname, host in snap.hosts.items():
         if not host.physical_gpus:
             findings.append(Finding(
-                platform=host.platform.upper(), resource=hostname,
+                platform=_canon_platform(host.platform), resource=hostname,
                 severity=Severity.INFO,
                 category=Category.CONFIGURATION,
                 title="No GPU detected on host",
@@ -73,7 +82,7 @@ def analyse(snap: GPUSnapshot, cfg: Optional[dict] = None) -> list[Finding]:
 
 def _physical_gpu_health(hostname, platform, gpu: PhysicalGPU, t, findings):
     label = f"{hostname} / GPU {gpu.index} ({gpu.name})"
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
 
     # Overall utilisation
     if gpu.gpu_util_pct is not None:
@@ -207,7 +216,7 @@ def _physical_gpu_health(hostname, platform, gpu: PhysicalGPU, t, findings):
 # ── vGPU slice sizing ─────────────────────────────────────────────────────────
 
 def _vgpu_slice_sizing(hostname, platform, gpu: PhysicalGPU, t, findings):
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
     underused, oversaturated = [], []
 
     for inst in gpu.vgpu_instances:
@@ -304,7 +313,7 @@ def _vgpu_slice_sizing(hostname, platform, gpu: PhysicalGPU, t, findings):
 
 def _vgpu_profile_licence_check(hostname, platform, gpu: PhysicalGPU, t, findings):
     """Flag Q-profile (Quadro vDWS) instances that show no signs of needing it."""
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
     q_candidates = [
         inst for inst in gpu.vgpu_instances
         if inst.profile.profile_type == "Q"
@@ -342,7 +351,7 @@ def _vgpu_profile_licence_check(hostname, platform, gpu: PhysicalGPU, t, finding
 
 def _slice_pack_efficiency(hostname, platform, gpu: PhysicalGPU, t, findings):
     """Is the physical GPU's frame buffer being well-utilised across all slices?"""
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
     eff = gpu.slice_efficiency_pct
     if eff is None:
         return
@@ -388,7 +397,7 @@ def _slice_pack_efficiency(hostname, platform, gpu: PhysicalGPU, t, findings):
 
 def _full_passthrough_check(hostname, platform, gpu: PhysicalGPU, findings):
     """A dedicated/passthrough GPU shared with no slicing is a density risk."""
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
     if gpu.total_memory_mb > 0:
         findings.append(Finding(
             platform=pfx,
@@ -413,7 +422,7 @@ def _full_passthrough_check(hostname, platform, gpu: PhysicalGPU, findings):
 # ── GPU process hogs ──────────────────────────────────────────────────────────
 
 def _gpu_process_hogs(hostname, platform, host: HostGPUData, t, findings):
-    pfx = platform.upper()
+    pfx = _canon_platform(platform)
     for proc in host.top_gpu_processes:
         if proc.utilization_pct >= t["process_gpu_hog_pct"]:
             findings.append(Finding(

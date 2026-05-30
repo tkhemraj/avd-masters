@@ -1,6 +1,6 @@
 """Mock snapshot fixtures for testing and dashboard demo."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from vdm.models.metrics import (
     AVDHostPool,
@@ -44,7 +44,9 @@ def make_avd_snapshot() -> AVDSnapshot:
                         sessions=14,
                         max_sessions=20,
                         agent_version="1.0.7982.1500",
-                        metrics=ResourceMetrics(cpu_percent=45.2, memory_percent=67.8),
+                        os_version="10.0.22631.4317",
+                        metrics=ResourceMetrics(cpu_percent=45.2, memory_percent=67.8, disk_percent=58.0),
+                        last_heartbeat=NOW - timedelta(minutes=1),
                     ),
                     AVDSessionHost(
                         name="avdhost-prod-02",
@@ -54,7 +56,10 @@ def make_avd_snapshot() -> AVDSnapshot:
                         sessions=16,
                         max_sessions=20,
                         agent_version="1.0.7982.1500",
-                        metrics=ResourceMetrics(cpu_percent=78.1, memory_percent=82.3),
+                        os_version="10.0.22631.4317",
+                        # Reports healthy + accepting, but the agent went silent 38m ago.
+                        metrics=ResourceMetrics(cpu_percent=78.1, memory_percent=82.3, disk_percent=93.5),
+                        last_heartbeat=NOW - timedelta(minutes=38),
                     ),
                     AVDSessionHost(
                         name="avdhost-prod-03",
@@ -64,7 +69,9 @@ def make_avd_snapshot() -> AVDSnapshot:
                         sessions=12,
                         max_sessions=20,
                         agent_version="1.0.7900.1000",
-                        metrics=ResourceMetrics(cpu_percent=91.4, memory_percent=89.0),
+                        os_version="10.0.22621.3958",  # older build than peers → image drift
+                        metrics=ResourceMetrics(cpu_percent=91.4, memory_percent=89.0, disk_percent=70.0),
+                        last_heartbeat=NOW - timedelta(minutes=2),
                     ),
                 ],
             ),
@@ -83,7 +90,9 @@ def make_avd_snapshot() -> AVDSnapshot:
                         sessions=0,
                         max_sessions=10,
                         agent_version="1.0.7800.1000",
+                        os_version="6.3.9600",  # Server 2012 R2 — out of support
                         metrics=ResourceMetrics(cpu_percent=None, memory_percent=None),
+                        last_heartbeat=NOW - timedelta(hours=6),
                     ),
                     AVDSessionHost(
                         name="avdhost-dev-02",
@@ -115,7 +124,9 @@ def make_rds_snapshot() -> RDSSnapshot:
                 status=HealthStatus.OK,
                 active_sessions=22,
                 disconnected_sessions=4,
+                max_sessions=30,
                 metrics=ResourceMetrics(cpu_percent=58.4, memory_percent=72.1, disk_percent=41.2),
+                os_version="Windows Server 2022 Datacenter",
                 uptime_hours=312.5,
             ),
             RDSHost(
@@ -123,7 +134,9 @@ def make_rds_snapshot() -> RDSSnapshot:
                 status=HealthStatus.WARNING,
                 active_sessions=28,
                 disconnected_sessions=2,
+                max_sessions=25,  # 28 active > 25 max → oversubscribed
                 metrics=ResourceMetrics(cpu_percent=88.3, memory_percent=91.4, disk_percent=65.0),
+                os_version="Windows Server 2022 Datacenter",
                 uptime_hours=720.0,
             ),
             RDSHost(
@@ -131,7 +144,9 @@ def make_rds_snapshot() -> RDSSnapshot:
                 status=HealthStatus.OFFLINE,
                 active_sessions=0,
                 disconnected_sessions=0,
+                max_sessions=25,
                 metrics=ResourceMetrics(),
+                os_version="Windows Server 2012 R2",  # out of support
                 uptime_hours=None,
             ),
         ],
@@ -145,8 +160,13 @@ def make_rds_snapshot() -> RDSSnapshot:
             available_cals=17,
         ),
         user_sessions=[
-            UserSession("dave", SessionState.ACTIVE, host="rdsh01.corp.local"),
-            UserSession("eve", SessionState.DISCONNECTED, host="rdsh02.corp.local"),
+            UserSession("dave", SessionState.ACTIVE, host="rdsh01.corp.local", idle_minutes=2),
+            UserSession("eve", SessionState.DISCONNECTED, host="rdsh02.corp.local", idle_minutes=510),
+            UserSession("frank", SessionState.DISCONNECTED, host="rdsh01.corp.local", idle_minutes=288),
+            UserSession("grace", SessionState.DISCONNECTED, host="rdsh01.corp.local", idle_minutes=372),
+            UserSession("heidi", SessionState.DISCONNECTED, host="rdsh02.corp.local", idle_minutes=265),
+            UserSession("ivan", SessionState.DISCONNECTED, host="rdsh01.corp.local", idle_minutes=640),
+            UserSession("judy", SessionState.DISCONNECTED, host="rdsh02.corp.local", idle_minutes=255),
         ],
     )
 
@@ -171,7 +191,20 @@ def make_citrix_snapshot() -> CitrixSnapshot:
                         registration_state="Registered",
                         power_state="On",
                         sessions=2,
+                        os_type="Windows 11",
+                        agent_version="2402.0.0",
                         metrics=ResourceMetrics(cpu_percent=34.0, memory_percent=61.0),
+                    ),
+                    CitrixMachine(
+                        name="ctx-win11-09",
+                        delivery_group="DG-Desktop-Win11",
+                        catalog="CAT-Win11",
+                        registration_state="Registered",
+                        power_state="On",
+                        maintenance_mode=True,  # left in maintenance after patching
+                        sessions=0,
+                        os_type="Windows 11",
+                        agent_version="2402.0.0",
                     ),
                 ],
             ),
@@ -199,13 +232,14 @@ def make_citrix_snapshot() -> CitrixSnapshot:
                         registration_state="Unregistered",
                         power_state="On",
                         sessions=0,
+                        os_type="Windows Server 2012 R2",  # out of support
                     ),
                 ],
             ),
         ],
         controllers=[
             CitrixController("ddc01.corp.local", state="Active", version="7.2402.0.0"),
-            CitrixController("ddc02.corp.local", state="Active", version="7.2402.0.0"),
+            CitrixController("ddc02.corp.local", state="Active", version="7.2311.0.0"),  # upgrade stalled
         ],
         user_sessions=[
             UserSession("frank", SessionState.ACTIVE, host="ctx-win11-01"),
